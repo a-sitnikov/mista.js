@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         mista.ru
 // @namespace    http://tampermonkey.net/
-// @version      0.8
+// @version      0.8.1
 // @description  try to take over the world!
 // @author       You
 // @match        *.mista.ru/*
@@ -349,7 +349,6 @@ function attachTooltip(link, id, loadDataFunc) {
 
 // ----------------Youtube-------------------------------------
 function setYoutubeTitle(link, videoId) {
-
     var apiUrl = "https://www.googleapis.com/youtube/v3/videos?key=AIzaSyBPtVWaQ7iGkObgyavKoNVQdfPwczAdQUE&&fields=items(snippet(title))&part=snippet&id=" + videoId;
 
     $.ajax({
@@ -359,9 +358,11 @@ function setYoutubeTitle(link, videoId) {
             var fullTitle = data.items[0].snippet.title;
             var title = fullTitle;
             if (fullTitle.length > maxYoutubeTitle) title = title.substring(0, maxYoutubeTitle) + "...";
-            $(link).text("y: " + title);
+            $(link).text("youtube: " + title);
             $(link).attr("title", fullTitle);
         } catch(e) {
+            console.log(e.message);
+            console.log(data);
         }
     });
 }
@@ -483,8 +484,11 @@ function run(){
         $('a[href*="youtube"]').each(function(){
             var link = this;
             var url = $(this).attr("href");
-            var videoId = url.match(/v=(.+)(\&|$)/)[1];
-            setYoutubeTitle(link, videoId);
+            var videoId;
+            try{
+                videoId = url.match(/v=(.+)(\&|$)/)[1];
+            } catch(e){}
+            if (videoId) setYoutubeTitle(link, videoId);
         });
 
         $('a[href*="youtu.be"]').each(function(){
