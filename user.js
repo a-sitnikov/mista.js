@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         mista.ru
 // @namespace    http://tampermonkey.net/
-// @version      0.6
+// @version      0.6.1
 // @description  try to take over the world!
 // @author       You
 // @match        *.mista.ru/*
@@ -308,7 +308,7 @@ function showImgTooltip(link, url, headerText) {
         timer = setTimeout(function() {
             createTooltip(link, '_p');
             $('#tooltip-author_p').html('<b>' + headerText + '</b>');
-            $('#tooltip-text_p').html('<img src="' + url + '">');
+            $('#tooltip-text_p').html('<img src="' + url + '" style="max-width: ' + maxImgWidth + 'px; height:auto;">');
             $('#tooltip-text_p img').on('load', function(){
                 if ($(this).height() === 1) {
                     $('#tooltip-text_p').text('Картинка отсутствует');
@@ -419,7 +419,7 @@ function run(){
 
             var url = $(this).attr("href");
             $(this).text("");
-            $('<img src="' + url + '" style="max-width: ' + maxImgWidth + 'px"/>').appendTo($(this));
+            $('<img src="' + url + '" style="max-width: ' + maxImgWidth + 'px; height:auto;"/>').appendTo($(this));
 
         });
 
@@ -456,6 +456,14 @@ function run(){
             setYoutubeTitle(link, videoId);
         });
     }
+
+    $('a[href*="yadi.sk"]').each(function(){
+
+        $.ajax({url: $(this).attr("href")})
+            .done(function(data){
+                console.log(data);
+            });
+    });
 }
 
 (function() {
