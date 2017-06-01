@@ -1,7 +1,7 @@
-﻿ // ==UserScript==
+﻿// ==UserScript==
 // @name         mista.ru
 // @namespace    http://tampermonkey.net/
-// @version      0.5.1
+// @version      0.6
 // @description  try to take over the world!
 // @author       You
 // @match        *.mista.ru/*
@@ -16,6 +16,7 @@ var tooltipsOrder = [];
 var tooltipsMap = {};
 var tooltipDelay = 0;
 var maxImgWidth = 0;
+var maxYoutubeTitle = 0;
 
 var defaultOptions = {
     "show-tooltips":         "true",
@@ -25,7 +26,9 @@ var defaultOptions = {
     "author-color":          "#ffd784",
     "show-userpics":         "onMouseOver",
     "show-imgs":             "onMouseOver",
-    "max-img-width":         "500"
+    "max-img-width":         "500",
+    "show-youtube-title":    "true",
+    "max-youtube-title":     "40"
 };
 
 function tooltipHtml(msgId) {
@@ -243,6 +246,11 @@ function openMistaScriptOptions(){
                     '<label for="maxImgWidth">Макс. ширина картинки</label>' +
                     '<input id="maxImgWidth" name="maxImgWidth" style="margin-left:5px; width: 50px;" value="maxImgWidth"> px' +
                 '</div>' +
+                '<div style="margin-bottom:5px">' +
+                    '<input id="youtubeTitle" type="checkbox" name="youtubeTitle" value="youtubeTitle">' +
+                    '<label for="youtubeTitle">Показывать наименования роликов youtube, макс. длина</label>' +
+                    '<input id="maxYoutubeTitle" name="maxYoutubeTitle" style="margin-left:5px; width: 50px" value="maxYoutubeTitle"> символов' +
+                '</div>' +
                 '<div>После применения настроек страницу нужно перезагрузить</div>' +
                 '<div>' +
                     '<button id="applyOptions" class="sendbutton" style="margin: 5px">OK</button>' +
@@ -266,6 +274,9 @@ function openMistaScriptOptions(){
     $('input:radio[name=showImgs]').val([readOption("show-imgs")]);
     $("#maxImgWidth").val(readOption("max-img-width"));
 
+    if (readOption("show-youtube-title") === 'true')    $('#youtubeTitle').attr("checked", "checked");
+    $("#maxYoutubeTitle").val(readOption("max-youtube-title"));
+
     $('#applyOptions').click(function(){
 
         saveOption("show-tooltips",         $('#showTooltips').is(':checked'));
@@ -276,6 +287,8 @@ function openMistaScriptOptions(){
         saveOption("show-userpics",         $('input:radio[name=showUserpics]:checked').val());
         saveOption("show-imgs",             $('input:radio[name=showImgs]:checked').val());
         saveOption("max-img-width",         $('#maxImgWidth').val());
+        saveOption("show-youtube-title",    $('#youtubeTitle').is(':checked'));
+        saveOption("max-youtube-title",     $('#maxYoutubeTitle').val());
 
         $('#mista-script').remove();
         $('#mista-script-overlay').remove();
@@ -311,9 +324,29 @@ function showImgTooltip(link, url, headerText) {
     });
 }
 
+function setYootubeTitle(link, videoId) {
+
+    var apiUrl = "https://www.googleapis.com/youtube/v3/videos?key=AIzaSyBPtVWaQ7iGkObgyavKoNVQdfPwczAdQUE&&fields=items(snippet(title))&part=snippet&id=" + videoId;
+
+    $.ajax({
+        url: apiUrl
+    }).done(function(data){
+        try {
+            var fullTitle = data.items[0].snippet.title;
+            var title = fullTitle;
+            if (fullTitle.length > maxYoutubeTitle) title = title.substring(0, maxYoutubeTitle) + "...";
+            $(link).text("y: " + title);
+            $(link).attr("title", fullTitle);
+        } catch(e) {
+        }
+    });
+}
+
 function run(){
+
     tooltipDelay = readOption('tooltip-delay');
     maxImgWidth = readOption('max-img-width');
+    maxYoutubeTitle = readOption('max-youtube-title');
 
     if (readOption('show-tooltips') === 'true') {
         addTooltips();
@@ -405,6 +438,24 @@ function run(){
     $('<li class="nav-item"><a href="#">Настройки Mista.Script</a></li>')
         .appendTo("ul.nav-bar")
         .click(openMistaScriptOptions);
+
+    if (readOption('show-youtube-title') === 'true'){
+
+        $('a[href*="youtube"]').each(function(){
+            var link = this;
+            var url = $(this).attr("href");
+            var videoId = url.match(/v=(.+)(\&|$)/)[1];
+            setYootubeTitle(link, videoId);
+        });
+
+        $('a[href*="youtu.be"]').each(function(){
+            var link = this;
+            var url = $(this).attr("href");
+            var videoId = url.match(/e\/(.+)(\&|$)/)[1];
+
+            setYootubeTitle(link, videoId);
+        });
+    }
 }
 
 (function() {
