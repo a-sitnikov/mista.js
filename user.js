@@ -1,9 +1,9 @@
 ﻿// ==UserScript==
 // @name         mista.ru
 // @namespace    http://tampermonkey.net/
-// @version      0.7.3
-// @description  Make mista great again!
-// @author       acsent
+// @version      0.8
+// @description  try to take over the world!
+// @author       You
 // @match        *.mista.ru/*
 // @grant        none
 // @require      https://code.jquery.com/jquery-3.2.1.min.js
@@ -35,36 +35,14 @@ var defaultOptions = {
     "first-post-tooltip":    "true"
 };
 
-function tooltipHtml(msgId) {
-    return '<div id=tooltip' + msgId+ ' msg-id=' + msgId + ' class="gensmall" style="position:absolute; background:#FFFFE1; border:1px solid #000000; width:630px; font-weight:normal;">'+
-        '<div id=tooltip-author' + msgId+ ' msg-id=' + msgId + '  style="cursor: move; background:white; padding:4px; border-bottom:1px solid silver"><span><b>Подождите...</b></span></div>' +
-        '<div id=tooltip-text' + msgId+ ' msg-id=' + msgId + '  style="padding:4px"><span>Идет ajax загрузка.<br/>Это может занять некоторое время.</span></div>' +
-        '<span id=tooltip-close' + msgId + ' msg-id=' + msgId + '  style="POSITION: absolute; RIGHT: 6px; TOP: 3px; cursor:hand; cursor:pointer">'+
-            '<b> x </b>' +
-        '</span>' +
-    '</div>';
-}
+function getImgUrl(url) {
+    if (url.search("ximage.ru/index.php") !== -1) {
+        var imgId = url.match(/id=(.+)$/)[1];
+        return "http://ximage.ru/data/imgs/" + imgId + ".jpg";
 
-function removeTooltip() {
-    // remove all subsequent tooltips
-    var msgId = $(this).attr("msg-id");
-    var ind = tooltipsOrder.indexOf(msgId);
-    for (var i = ind; i < tooltipsOrder.length; i++) {
-        var tempMsgId = tooltipsOrder[i];
-        if (tooltipsMap[tempMsgId]) tooltipsMap[tempMsgId].remove();
-        tooltipsMap[tempMsgId] = null;
+    } else if (url.search(/.+\.(jpg|jpeg|png)$/) !== -1) {
+        return url;
     }
-    tooltipsOrder.splice(ind);
-}
-
-function removeAllTooltips() {
-    // remove all subsequent tooltips
-    for (var i = 0; i < tooltipsOrder.length; i++) {
-        var tempMsgId = tooltipsOrder[i];
-        if (tooltipsMap[tempMsgId]) tooltipsMap[tempMsgId].remove();
-        tooltipsMap[tempMsgId] = null;
-    }
-    tooltipsOrder = [];
 }
 
 function getMsgId(elem){
@@ -74,19 +52,6 @@ function getMsgId(elem){
     } catch(error) {
     }
     return null;
-}
-
-function setMsgText(msgId, elemAuthor, elemText){
-    var author = $('#tduser' + msgId).html();
-    var text = $('#' + msgId).html();
-    if (text) {
-        elemAuthor.html(author);
-        elemText.html(text);
-        addTooltips(elemText);
-    } else {
-        setMsgTextAjax(null, msgId, elemAuthor, elemText);
-    }
-
 }
 
 function utimeToDate(utime) {
@@ -111,90 +76,7 @@ function normalizeJSON(text) {
     return text;
 }
 
-function setMsgTextAjax(topicId, msgId, elemHeader, elemText){
-
-    if (!topicId) topicId = currentTopicId;
-    var apiUrl = "ajax_topic.php?id=" + topicId + "&from=" + msgId + "&to=" + (parseInt(msgId) + 1);
-
-    $.ajax({
-        url: apiUrl
-    }).done(function(data) {
-        dataObj = eval(data);
-        if (!dataObj) {
-            elemText.text('Сообщение не найдено');
-            return;
-        }
-        var msgArr = dataObj.filter(function(a){ return a.n === msgId; });
-        if (msgArr.length === 1) {
-            var msg = msgArr[0];
-            var text = msg.text.replace(/\(([0-9]+)\)/g, "<a href='#$1'>($1)</a>");
-            var user = "<b>" + msg.user + "</b><br>"+
-                "<span class='message-info'>" + msg.n + " - " + utimeToDate(msg.utime) + "</span>";
-            elemText.html(text);
-            if (elemHeader) elemHeader.html(user);
-            addTooltips(elemText);
-        }
-    });
-}
-
-function createTooltip(link, msgId) {
-    if ($('#tooltip' + msgId).length > 0) return;
-    $(tooltipHtml(msgId)).appendTo('#body');
-    var loc = $(link).offset();
-    var left = loc.left;
-    if ($(window).width() - loc.left < 100) {
-        left = left - 630;
-    }
-
-    var elem = $("#tooltip" + msgId)
-        .draggable()
-        .css({
-            "top": loc.top + "px",
-            "left": left + "px"
-            //"z-index": "999"
-         })
-        .click(removeTooltip);
-
- /*   $("#tooltip-close" + msgId).click(function(event){
-        removeTooltip();
-    }); */
-    tooltipsMap[msgId] = elem;
-    tooltipsOrder.push(msgId);
-
-    return elem;
-}
-
-function showTooltip(link){
-    var msgId = getMsgId(link);
-    createTooltip(link, msgId);
-
-    setMsgText(msgId, $("#tooltip-author" + msgId), $("#tooltip-text" + msgId));
-}
-
-function addTooltips(parentElem) {
-
-    if (!parentElem) parentElem = $(document);
-
-    parentElem.find('a[href^="#"], a[href^="topic.php?id="]')
-       .filter(function(index){
-           var href = $(this).attr("href");
-           return href.search(/#[0-9]+/) !== -1;
-        })
-       .each(function(){
-            var timer;
-            var link = this;
-            $(this).hover(function(){
-                timer = setTimeout(function(){
-                    showTooltip(link);
-                }, +tooltipDelay);
-            },
-            function() {
-                // on mouse out, cancel the timer
-                clearTimeout(timer);
-            });
-       });
-}
-
+// ----------------Tooltips-------------------------------------
 function saveOption(name, value) {
     window.localStorage.setItem(name, String(value));
 }
@@ -316,26 +198,147 @@ function openMistaScriptOptions(){
     });
 }
 
-function loadImg(url){
-    return function(){
-        $('#tooltip-text_p').html('<img src="' + url + '" style="max-width: ' + maxImgWidth + 'px; height:auto;">');
-        $('#tooltip-text_p img').on('load', function(){
+// ----------------Tooltips-------------------------------------
+function tooltipHtml(msgId) {
+    return '<div id=tooltip' + msgId+ ' msg-id=' + msgId + ' class="gensmall" style="position:absolute; background:#FFFFE1; border:1px solid #000000; width:630px; font-weight:normal;">'+
+        '<div id=tooltip-header' + msgId+ ' msg-id=' + msgId + '  style="cursor: move; background:white; padding:4px; border-bottom:1px solid silver"><span><b>Подождите...</b></span></div>' +
+        '<div id=tooltip-text' + msgId+ ' msg-id=' + msgId + '  style="padding:4px"><span>Идет ajax загрузка.<br/>Это может занять некоторое время.</span></div>' +
+        '<span id=tooltip-close' + msgId + ' msg-id=' + msgId + '  style="POSITION: absolute; RIGHT: 6px; TOP: 3px; cursor:hand; cursor:pointer">'+
+            '<b> x </b>' +
+        '</span>' +
+    '</div>';
+}
+
+function removeTooltip() {
+    // remove all subsequent tooltips
+    var msgId = $(this).attr("msg-id");
+    var ind = tooltipsOrder.indexOf(msgId);
+    for (var i = ind; i < tooltipsOrder.length; i++) {
+        var tempMsgId = tooltipsOrder[i];
+        if (tooltipsMap[tempMsgId]) tooltipsMap[tempMsgId].remove();
+        tooltipsMap[tempMsgId] = null;
+    }
+    tooltipsOrder.splice(ind);
+}
+
+function removeAllTooltips() {
+    // remove all subsequent tooltips
+    for (var i = 0; i < tooltipsOrder.length; i++) {
+        var tempMsgId = tooltipsOrder[i];
+        if (tooltipsMap[tempMsgId]) tooltipsMap[tempMsgId].remove();
+        tooltipsMap[tempMsgId] = null;
+    }
+    tooltipsOrder = [];
+}
+
+function setMsgText(msgId, elemAuthor, elemText){
+    var author = $('#tduser' + msgId).html();
+    var text = $('#' + msgId).html();
+    if (text) {
+        elemAuthor.html(author);
+        elemText.html(text);
+        addTooltips(elemText);
+    } else {
+        setMsgTextAjax(null, msgId, elemAuthor, elemText);
+    }
+
+}
+
+function setMsgTextAjax(topicId, msgId, elemHeader, elemText){
+
+    if (!topicId) topicId = currentTopicId;
+    var apiUrl = "ajax_topic.php?id=" + topicId + "&from=" + msgId + "&to=" + (parseInt(msgId) + 1);
+
+    $.ajax({
+        url: apiUrl
+    }).done(function(data) {
+        dataObj = eval(data);
+        if (!dataObj) {
+            elemText.text('Сообщение не найдено');
+            return;
+        }
+        var msgArr = dataObj.filter(function(a){ return a.n === msgId; });
+        if (msgArr.length === 1) {
+            var msg = msgArr[0];
+            var text = msg.text.replace(/\(([0-9]+)\)/g, "<a href='#$1'>($1)</a>");
+            var user = "<b>" + msg.user + "</b><br>"+
+                "<span class='message-info'>" + msg.n + " - " + utimeToDate(msg.utime) + "</span>";
+            elemText.html(text);
+            if (elemHeader) elemHeader.html(user);
+            addTooltips(elemText);
+        }
+    });
+}
+
+function addTooltips(parentElem) {
+
+    if (!parentElem) parentElem = $(document);
+
+    parentElem.find('a[href^="#"], a[href^="topic.php?id="]')
+       .filter(function(index){
+           var href = $(this).attr("href");
+           return href.search(/#[0-9]+/) !== -1;
+        })
+       .each(function(){
+            var msgId = getMsgId(this);
+            attachTooltip(this, msgId, loadDataMsg());
+       });
+}
+
+function loadDataImg(url, header){
+
+    if (!header) header = 'Картинка';
+
+    return function(id){
+        $('#tooltip-header' + id).html('<b>' + header + '</b>');
+        $('#tooltip-text' + id).html('<img src="' + url + '" style="max-width: ' + maxImgWidth + 'px; height:auto;">');
+        $('#tooltip-text' + id + ' img').on('load', function(){
             if ($(this).height() === 1) {
-                $('#tooltip-text_p').text('Картинка отсутствует');
+                $('#tooltip-text' + id).text('Картинка отсутствует');
             } else {
-                $('#tooltip_p').width($(this).width() + 8);
+                $('#tooltip' + id).width($(this).width() + 8);
             }
         });
     };
 }
 
-function showImgTooltip(link, msgId, headerText, loadDataFunc) {
+function loadDataMsg(){
+    return function(id) {
+        setMsgText(id, $("#tooltip-header" + id), $("#tooltip-text" + id));
+    };
+}
+
+function createTooltip(link, msgId) {
+    if ($('#tooltip' + msgId).length > 0) return;
+    $(tooltipHtml(msgId)).appendTo('#body');
+    var loc = $(link).offset();
+    var left = loc.left;
+    if ($(window).width() - loc.left < 100) {
+        left = left - 630;
+    }
+
+    var elem = $("#tooltip" + msgId)
+        .draggable()
+        .css({
+            "top": loc.top + "px",
+            "left": left + "px"
+            //"z-index": "999"
+         })
+        .click(removeTooltip);
+
+    tooltipsMap[msgId] = elem;
+    tooltipsOrder.push(msgId);
+
+    return elem;
+}
+
+function attachTooltip(link, id, loadDataFunc) {
+
     var timer;
     $(link).hover(function(){
         timer = setTimeout(function() {
-            createTooltip(link, msgId);
-            $('#tooltip-author_p').html('<b>' + headerText + '</b>');
-            loadDataFunc();
+            createTooltip(link, id);
+            loadDataFunc(id);
         }, +tooltipDelay);
     },
     function() {
@@ -344,6 +347,7 @@ function showImgTooltip(link, msgId, headerText, loadDataFunc) {
     });
 }
 
+// ----------------Youtube-------------------------------------
 function setYoutubeTitle(link, videoId) {
 
     var apiUrl = "https://www.googleapis.com/youtube/v3/videos?key=AIzaSyBPtVWaQ7iGkObgyavKoNVQdfPwczAdQUE&&fields=items(snippet(title))&part=snippet&id=" + videoId;
@@ -360,16 +364,6 @@ function setYoutubeTitle(link, videoId) {
         } catch(e) {
         }
     });
-}
-
-function getImgUrl(url) {
-    if (url.search("ximage.ru/index.php") !== -1) {
-        var imgId = url.match(/id=(.+)$/)[1];
-        return "http://ximage.ru/data/imgs/" + imgId + ".jpg";
-
-    } else if (url.search(/.+\.(jpg|jpeg|png)$/) !== -1) {
-        return url;
-    }
 }
 
 function run(){
@@ -447,15 +441,14 @@ function run(){
 
             var userId = $(this).attr('data-user_id');
             var user = $(this).text();
-            var url = "/users_photo/mid/" + userId + ".jpg";
+            var imgUrl = "/users_photo/mid/" + userId + ".jpg";
 
-            showImgTooltip(this, '_p', user, loadImg(url));
+            attachTooltip(this, '_p', loadDataImg(imgUrl, user));
 
         });
     }
 
     var showImgs = readOption('show-imgs');
-    var regFilter = /.+\.(jpg|jpeg|png)$/;
     if (showImgs === 'showAlways'){
 
         $('a').each(function(a){
@@ -476,7 +469,7 @@ function run(){
             var imgUrl = getImgUrl(url);
             if (imgUrl){
                 var link = $('<span class="agh" style="cursor: pointer">[?]</span>').insertAfter($(this));
-                showImgTooltip(this, '_p', "Картинка", loadImg(imgUrl));
+                attachTooltip(this, '_p', loadDataImg(imgUrl));
             }
         });
     }
@@ -510,13 +503,14 @@ function run(){
              } )
             .each(function(){
                 $('<span class="agh" style="cursor: pointer">[?]</span>').insertAfter($(this));
-                var header = $(this).text();
-                showImgTooltip(this, "_0_0", header, function(){
-                    setMsgTextAjax(null, "0", $("#tooltip-author" + msgId),  $("#tooltip-text" + msgId));
+                var topicId = $(this).attr("href").match(/id=([0-9]+)($|\&)/)[1];
+                var msgId = "_0_0";
+                attachTooltip(this, msgId, function(){
+                    setMsgTextAjax(topicId, "0", $("#tooltip-header" + msgId),  $("#tooltip-text" + msgId));
                 });
             });
     }
-    
+
 }
 
 (function() {
