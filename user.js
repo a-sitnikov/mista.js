@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         mista.ru
 // @namespace    http://tampermonkey.net/
-// @version      0.6.2
+// @version      0.7
 // @description  try to take over the world!
 // @author       You
 // @match        *.mista.ru/*
@@ -24,6 +24,8 @@ var defaultOptions = {
     "replace-catalog-to-is": "true",
     "mark-author":           "true",
     "author-color":          "#ffd784",
+    "mark-yourself":         "true",
+    "yourself-color":        "#9bc5ef",
     "show-userpics":         "onMouseOver",
     "show-imgs":             "onMouseOver",
     "max-img-width":         "500",
@@ -230,6 +232,11 @@ function openMistaScriptOptions(){
                     '<label for="markAuthor">Подсвечивать автора цветом</label>' +
                     '<input id="authorColor" type="color" name="authorColor" style="margin-left:5px; width: 100px" value="authorColor">' +
                 '</div>' +
+                 '<div style="margin-bottom:5px">' +
+                    '<input id="markYourself" type="checkbox" name="markYourself" value="markYourself">' +
+                    '<label for="markYourself">Подсвечивать себя цветом</label>' +
+                    '<input id="yourselfColor" type="color" name="yourselfColor" style="margin-left:5px; width: 100px" value="yourselfColor">' +
+                '</div>' +
                 '<div style="margin-bottom:5px">' +
                     '<label for="showUserpics">Показывать фото пользователей</label><br>' +
                     '<input type="radio" name="showUserpics" value="showAlways" checked> Показывать всегда' +
@@ -270,6 +277,10 @@ function openMistaScriptOptions(){
     if (readOption("replace-catalog-to-is") === 'true') $('#replaceCatalogToIS').attr("checked", "checked");
     if (readOption("mark-author") === 'true')           $('#markAuthor').attr("checked", "checked");
     $("#authorColor").val(readOption("author-color"));
+
+    if (readOption("mark-yourself") === 'true')         $('#markYourself').attr("checked", "checked");
+    $("#yourselfColor").val(readOption("yourself-color"));
+
     $('input:radio[name=showUserpics]').val([readOption("show-userpics")]);
     $('input:radio[name=showImgs]').val([readOption("show-imgs")]);
     $("#maxImgWidth").val(readOption("max-img-width"));
@@ -284,6 +295,8 @@ function openMistaScriptOptions(){
         saveOption("replace-catalog-to-is", $('#replaceCatalogToIS').is(':checked'));
         saveOption("mark-author",           $('#markAuthor').is(':checked'));
         saveOption("author-color",          $('#authorColor').val());
+        saveOption("mark-yourself",         $('#markYourself').is(':checked'));
+        saveOption("yourself-color",        $('#yourselfColor').val());
         saveOption("show-userpics",         $('input:radio[name=showUserpics]:checked').val());
         saveOption("show-imgs",             $('input:radio[name=showImgs]:checked').val());
         saveOption("max-img-width",         $('#maxImgWidth').val());
@@ -383,6 +396,13 @@ function run(){
             $('a:contains("' + user + '")', "td[id^=tduser]").css({"background": authorColor});
             $('span:contains("' + user + '")', "td[id^=tduser]").css({"background": authorColor});
         }
+    }
+
+    if (readOption("mark-yourself") === 'true') {
+        // a - if logged in, span - otherwise
+        var yourUrl = $('a[href*="users.php?id="]',  "#user-td").attr("href");
+        var yourColor = readOption("yourself-color");
+        $('a[href="' +yourUrl + '"]', "td[id^=tduser]").css({"background": yourColor});
     }
 
     var showUserpics = readOption('show-userpics');
