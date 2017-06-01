@@ -324,7 +324,7 @@ function showImgTooltip(link, url, headerText) {
     });
 }
 
-function setYootubeTitle(link, videoId) {
+function setYoutubeTitle(link, videoId) {
 
     var apiUrl = "https://www.googleapis.com/youtube/v3/videos?key=AIzaSyBPtVWaQ7iGkObgyavKoNVQdfPwczAdQUE&&fields=items(snippet(title))&part=snippet&id=" + videoId;
 
@@ -445,7 +445,7 @@ function run(){
             var link = this;
             var url = $(this).attr("href");
             var videoId = url.match(/v=(.+)(\&|$)/)[1];
-            setYootubeTitle(link, videoId);
+            setYoutubeTitle(link, videoId);
         });
 
         $('a[href*="youtu.be"]').each(function(){
@@ -453,7 +453,7 @@ function run(){
             var url = $(this).attr("href");
             var videoId = url.match(/e\/(.+)(\&|$)/)[1];
 
-            setYootubeTitle(link, videoId);
+            setYoutubeTitle(link, videoId);
         });
     }
 }
