@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         mista.ru
 // @namespace    http://tampermonkey.net/
-// @version      0.7
+// @version      0.7.2
 // @description  try to take over the world!
 // @author       You
 // @match        *.mista.ru/*
@@ -17,6 +17,7 @@ var tooltipsMap = {};
 var tooltipDelay = 0;
 var maxImgWidth = 0;
 var maxYoutubeTitle = 0;
+var currentTopicId = 0;
 
 var defaultOptions = {
     "show-tooltips":         "true",
@@ -30,7 +31,8 @@ var defaultOptions = {
     "show-imgs":             "onMouseOver",
     "max-img-width":         "500",
     "show-youtube-title":    "true",
-    "max-youtube-title":     "40"
+    "max-youtube-title":     "40",
+    "first-post-tooltip":    "true"
 };
 
 function tooltipHtml(msgId) {
@@ -49,7 +51,7 @@ function removeTooltip() {
     var ind = tooltipsOrder.indexOf(msgId);
     for (var i = ind; i < tooltipsOrder.length; i++) {
         var tempMsgId = tooltipsOrder[i];
-        tooltipsMap[tempMsgId].remove();
+        if (tooltipsMap[tempMsgId]) tooltipsMap[tempMsgId].remove();
         tooltipsMap[tempMsgId] = null;
     }
     tooltipsOrder.splice(ind);
@@ -59,7 +61,7 @@ function removeAllTooltips() {
     // remove all subsequent tooltips
     for (var i = 0; i < tooltipsOrder.length; i++) {
         var tempMsgId = tooltipsOrder[i];
-        tooltipsMap[tempMsgId].remove();
+        if (tooltipsMap[tempMsgId]) tooltipsMap[tempMsgId].remove();
         tooltipsMap[tempMsgId] = null;
     }
     tooltipsOrder = [];
@@ -82,7 +84,7 @@ function setMsgText(msgId, elemAuthor, elemText){
         elemText.html(text);
         addTooltips(elemText);
     } else {
-        setMsgTextAjax(msgId, elemAuthor, elemText);
+        setMsgTextAjax(null, msgId, elemAuthor, elemText);
     }
 
 }
@@ -109,24 +111,15 @@ function normalizeJSON(text) {
     return text;
 }
 
-function setMsgTextAjax(msgId, elemAuthor, elemText){
-    var currentUrl = window.location.href;
-    var topicId = currentUrl.match(/id=([0-9]+)/)[1];
-    var url = "ajax_topic.php?id=" + topicId + "&from=" + msgId + "&to=" + (parseInt(msgId) + 1);
+function setMsgTextAjax(topicId, msgId, elemHeader, elemText){
+
+    if (!topicId) topicId = currentTopicId;
+    var apiUrl = "ajax_topic.php?id=" + topicId + "&from=" + msgId + "&to=" + (parseInt(msgId) + 1);
 
     $.ajax({
-        url: url
+        url: apiUrl
     }).done(function(data) {
-
-        data = normalizeJSON(data);
-        var dataObj = null;
-        try {
-            dataObj = JSON.parse(data);
-        } catch(e) {
-            console.log(data);
-            return;
-        }
-
+        dataObj = eval(data);
         if (!dataObj) {
             elemText.text('Сообщение не найдено');
             return;
@@ -138,7 +131,7 @@ function setMsgTextAjax(msgId, elemAuthor, elemText){
             var user = "<b>" + msg.user + "</b><br>"+
                 "<span class='message-info'>" + msg.n + " - " + utimeToDate(msg.utime) + "</span>";
             elemText.html(text);
-            elemAuthor.html(user);
+            if (elemHeader) elemHeader.html(user);
             addTooltips(elemText);
         }
     });
@@ -162,7 +155,9 @@ function createTooltip(link, msgId) {
          })
         .click(removeTooltip);
 
-    $("#tooltip-close" + msgId).click(removeTooltip);
+ /*   $("#tooltip-close" + msgId).click(function(event){
+        removeTooltip();
+    }); */
     tooltipsMap[msgId] = elem;
     tooltipsOrder.push(msgId);
 
@@ -228,6 +223,10 @@ function openMistaScriptOptions(){
                     '<label for="replaceCatalogToIS">Обратно заменять catalog.mista.ru на infostart.ru</label>' +
                 '</div>' +
                 '<div style="margin-bottom:5px">' +
+                    '<input id="firstPostTooltip" type="checkbox" name="firstPostTooltip" value="firstPostTooltip">' +
+                    '<label for="firstPostTooltip">Отображать тултип нулевого поста ветки</label>' +
+                '</div>' +
+                '<div style="margin-bottom:5px">' +
                     '<input id="markAuthor" type="checkbox" name="markAuthor" value="markAuthor">' +
                     '<label for="markAuthor">Подсвечивать автора цветом</label>' +
                     '<input id="authorColor" type="color" name="authorColor" style="margin-left:5px; width: 100px" value="authorColor">' +
@@ -275,6 +274,7 @@ function openMistaScriptOptions(){
     $("#tooltipDelay").val(readOption("tooltip-delay"));
 
     if (readOption("replace-catalog-to-is") === 'true') $('#replaceCatalogToIS').attr("checked", "checked");
+    if (readOption("first-post-tooltip") === 'true')    $('#firstPostTooltip').attr("checked", "checked");
     if (readOption("mark-author") === 'true')           $('#markAuthor').attr("checked", "checked");
     $("#authorColor").val(readOption("author-color"));
 
@@ -302,6 +302,7 @@ function openMistaScriptOptions(){
         saveOption("max-img-width",         $('#maxImgWidth').val());
         saveOption("show-youtube-title",    $('#youtubeTitle').is(':checked'));
         saveOption("max-youtube-title",     $('#maxYoutubeTitle').val());
+        saveOption("first-post-tooltip",    $('#firstPostTooltip').val());
 
         $('#mista-script').remove();
         $('#mista-script-overlay').remove();
@@ -315,20 +316,26 @@ function openMistaScriptOptions(){
     });
 }
 
-function showImgTooltip(link, url, headerText) {
+function loadImg(url){
+    return function(){
+        $('#tooltip-text_p').html('<img src="' + url + '" style="max-width: ' + maxImgWidth + 'px; height:auto;">');
+        $('#tooltip-text_p img').on('load', function(){
+            if ($(this).height() === 1) {
+                $('#tooltip-text_p').text('Картинка отсутствует');
+            } else {
+                $('#tooltip_p').width($(this).width() + 8);
+            }
+        });
+    };
+}
+
+function showImgTooltip(link, msgId, headerText, loadDataFunc) {
     var timer;
     $(link).hover(function(){
         timer = setTimeout(function() {
-            createTooltip(link, '_p');
+            createTooltip(link, msgId);
             $('#tooltip-author_p').html('<b>' + headerText + '</b>');
-            $('#tooltip-text_p').html('<img src="' + url + '" style="max-width: ' + maxImgWidth + 'px; height:auto;">');
-            $('#tooltip-text_p img').on('load', function(){
-                if ($(this).height() === 1) {
-                    $('#tooltip-text_p').text('Картинка отсутствует');
-                } else {
-                    $('#tooltip_p').width($(this).width() + 8);
-                }
-            });
+            loadDataFunc();
         }, +tooltipDelay);
     },
     function() {
@@ -371,9 +378,17 @@ function run(){
     maxImgWidth = readOption('max-img-width');
     maxYoutubeTitle = readOption('max-youtube-title');
 
+    var currentUrl = window.location.href;
+    try {
+        currentTopicId = currentUrl.match(/id=([0-9]+)/)[1];
+    } catch(e){}
+
+    $('body').click(function(e){
+        //console.log($(e.target).closest('div[id^=tooltip]').length);
+        if ($(e.target).closest('div[id^=tooltip]').length === 0) removeAllTooltips();
+    });
     if (readOption('show-tooltips') === 'true') {
         addTooltips();
-        $('body').click(removeAllTooltips);
     }
 
     if (readOption("replace-catalog-to-is") === 'true') {
@@ -434,7 +449,7 @@ function run(){
             var user = $(this).text();
             var url = "/users_photo/mid/" + userId + ".jpg";
 
-            showImgTooltip(this, url, user);
+            showImgTooltip(this, '_p', user, loadImg(url));
 
         });
     }
@@ -457,12 +472,11 @@ function run(){
     } else if (showImgs === 'onMouseOver') {
 
         $('a').each(function(a){
-            //console.log(a);
             var url = $(this).attr("href");
             var imgUrl = getImgUrl(url);
             if (imgUrl){
                 var link = $('<span class="agh" style="cursor: pointer">[?]</span>').insertAfter($(this));
-                showImgTooltip(link, imgUrl, "Картинка");
+                showImgTooltip(this, '_p', "Картинка", loadImg(imgUrl));
             }
         });
     }
@@ -489,6 +503,21 @@ function run(){
         });
     }
 
+    if (readOption('first-post-tooltip') === 'true'){
+        $('a[href*="topic.php?"]', "td[id^=tdmsg]")
+            .filter(function(a){
+                return $(this).text().search(/^[0-9]+$/) === -1;
+             } )
+            .each(function(){
+                $('<span class="agh" style="cursor: pointer">[?]</span>').insertAfter($(this));
+                var header = $(this).text();
+                showImgTooltip(this, "_0_0", header, function(){
+                    setMsgTextAjax(null, "0", $("#tooltip-author" + msgId),  $("#tooltip-text" + msgId));
+                });
+            });
+    }
+    
+    var a = new qwe();
 }
 
 (function() {
