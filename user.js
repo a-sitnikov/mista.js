@@ -1,15 +1,15 @@
 ﻿// ==UserScript==
 // @name         mista.ru
 // @namespace    http://tampermonkey.net/
-// @version      0.6.1
+// @version      0.6.2
 // @description  try to take over the world!
 // @author       You
 // @match        *.mista.ru/*
 // @grant        none
 // @require      https://code.jquery.com/jquery-3.2.1.min.js
 // @require      https://code.jquery.com/ui/1.12.1/jquery-ui.min.js
-// @downloadURL  https://gist.githubusercontent.com/a-sitnikov/bc1886671da01b43f43a10748e1e92dc/raw/
-// @updateURL    https://gist.githubusercontent.com/a-sitnikov/bc1886671da01b43f43a10748e1e92dc/raw/
+// @downloadURL  https://cdn.jsdelivr.net/gh/a-sitnikov/mista.js@latest/user.js
+// @updateURL    https://cdn.jsdelivr.net/gh/a-sitnikov/mista.js@latest/user.js
 // ==/UserScript==
 
 var tooltipsOrder = [];
@@ -342,6 +342,16 @@ function setYoutubeTitle(link, videoId) {
     });
 }
 
+function getImgUrl(url) {
+    if (url.search("ximage.ru/index.php") !== -1) {
+        var imgId = url.match(/id=(.+)$/)[1];
+        return "http://ximage.ru/data/imgs/" + imgId + ".jpg";
+
+    } else if (url.search(/.+\.(jpg|jpeg|png)$/) !== -1) {
+        return url;
+    }
+}
+
 function run(){
 
     tooltipDelay = readOption('tooltip-delay');
@@ -413,25 +423,27 @@ function run(){
     var regFilter = /.+\.(jpg|jpeg|png)$/;
     if (showImgs === 'showAlways'){
 
-        $('a').filter(function(i){
-            return $(this).attr('href').search(regFilter) !== -1;
-        }).each(function(a){
+        $('a').each(function(a){
 
             var url = $(this).attr("href");
-            $(this).text("");
-            $('<img src="' + url + '" style="max-width: ' + maxImgWidth + 'px; height:auto;"/>').appendTo($(this));
+            var imgUrl = getImgUrl(url);
+            if (imgUrl){
+                $(this).text("");
+                $('<img src="' + imgUrl + '" style="max-width: ' + maxImgWidth + 'px; height:auto;"/>').appendTo($(this));
+            }
 
         });
 
     } else if (showImgs === 'onMouseOver') {
 
-        $('a').filter(function(i){
-            return $(this).attr('href').search(regFilter) !== -1;
-        }).each(function(a){
+        $('a').each(function(a){
             //console.log(a);
-            var link = $('<span class="agh" style="cursor: pointer">[?]</span>').insertAfter($(this));
-            showImgTooltip(link, $(this).attr("href"), "Картинка");
-
+            var url = $(this).attr("href");
+            var imgUrl = getImgUrl(url);
+            if (imgUrl){
+                var link = $('<span class="agh" style="cursor: pointer">[?]</span>').insertAfter($(this));
+                showImgTooltip(link, imgUrl, "Картинка");
+            }
         });
     }
 
@@ -457,13 +469,6 @@ function run(){
         });
     }
 
-    $('a[href*="yadi.sk"]').each(function(){
-
-        $.ajax({url: $(this).attr("href")})
-            .done(function(data){
-                console.log(data);
-            });
-    });
 }
 
 (function() {
