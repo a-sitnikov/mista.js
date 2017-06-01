@@ -517,7 +517,6 @@ function run(){
             });
     }
     
-    var a = new qwe();
 }
 
 (function() {
