@@ -1,9 +1,9 @@
 ﻿// ==UserScript==
 // @name         mista.ru
 // @namespace    http://tampermonkey.net/
-// @version      0.7.2
-// @description  try to take over the world!
-// @author       You
+// @version      0.7.3
+// @description  Make mista great again!
+// @author       acsent
 // @match        *.mista.ru/*
 // @grant        none
 // @require      https://code.jquery.com/jquery-3.2.1.min.js
