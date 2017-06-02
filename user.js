@@ -1,12 +1,12 @@
 ﻿// ==UserScript==
 // @name         mista.ru
 // @namespace    http://tampermonkey.net/
-// @version      0.9
+// @version      1.0.0
 // @description  Make mista great again!
 // @author       You
 // @match        *.mista.ru/*
 // @grant        none
-// @require      https://code.jquery.com/jquery-3.2.1.min.js
+// @require      http://forum.mista.ru/js/jquery-1.9.1.min.js
 // @require      https://code.jquery.com/ui/1.12.1/jquery-ui.min.js
 // @downloadURL  https://cdn.jsdelivr.net/gh/a-sitnikov/mista.js@latest/user.js
 // @updateURL    https://cdn.jsdelivr.net/gh/a-sitnikov/mista.js@latest/user.js
@@ -214,7 +214,8 @@ function openMistaScriptOptions(){
 
 // ----------------Tooltips-------------------------------------
 function tooltipHtml(msgId) {
-    return '<div id=tooltip' + msgId+ ' msg-id=' + msgId + ' class="gensmall" style="position:absolute; background:#FFFFE1; border:1px solid #000000; min-width: 600px; width:auto; max-width: 1200px; font-weight:normal;">'+
+    //min-width: 500px; width:auto; max-width: 1200px
+    return '<div id=tooltip' + msgId+ ' msg-id=' + msgId + ' class="gensmall" style="position:absolute; background:#FFFFE1; border:1px solid #000000; width:650px; font-weight:normal;">'+
         '<div id=tooltip-header' + msgId+ ' msg-id=' + msgId + '  style="cursor: move; background:white; padding:4px; border-bottom:1px solid silver"><span><b>Подождите...</b></span></div>' +
         '<div id=tooltip-text' + msgId+ ' msg-id=' + msgId + '  style="padding:4px"><span>Идет ajax загрузка.<br/>Это может занять некоторое время.</span></div>' +
         '<span id=tooltip-close' + msgId + ' msg-id=' + msgId + '  style="POSITION: absolute; RIGHT: 6px; TOP: 3px; cursor:hand; cursor:pointer">'+
@@ -258,6 +259,7 @@ function setMsgText(topicId, msgId, elemHeader, elemText){
             } catch(e) {}
         }
         elemText.html(text);
+        elemText.find('img').css({'max-width': '642px'});
         run(elemHeader, elemText, true);
     } else {
         setMsgTextAjax(topicId, msgId, elemHeader, elemText);
@@ -286,6 +288,7 @@ function setMsgTextAjax(topicId, msgId, elemHeader, elemText){
             elemText.html(text);
             if (elemHeader) elemHeader.html(user);
             run(elemHeader, elemText);
+            elemText.find('img').css('max-width: 642px');
         }
     });
 }
@@ -399,7 +402,13 @@ function processLinkToImage(element, url, onlyBindEvents) {
     if (options['show-imgs'].value === 'showAlways'){
         if (!onlyBindEvents) {
             $(element).text("");
-            $('<img src="' + imgUrl + '" style="max-width: ' + options['max-img-width'].value + 'px; height:auto;"/>').appendTo($(element));
+            var html = '';
+            var prev = $(element).prev();
+            if (prev.length === 0) {
+                html = '<br>';
+            }
+            html += '<img src="' + imgUrl + '" style="max-width: ' + options['max-img-width'].value + 'px; height:auto;"/>';
+            $(html).appendTo($(element));
         }
 
     } else if (options['show-imgs'].value === 'onMouseOver') {
@@ -545,11 +554,6 @@ function run(parentElemHeader, parentElemText, onlyBindEvents){
         if (processLinkToPost(this, url, onlyBindEvents)) return;
 
     });
-/*
-    $('#table_messages').on('mista.load', 'tr', function(data){
-        console.log(data);
-    });
-    */
 }
 
 (function() {
@@ -570,6 +574,13 @@ function run(parentElemHeader, parentElemText, onlyBindEvents){
 
     $('body').click(function(e){
         if ($(e.target).closest('div[id^=tooltip]').length === 0) removeAllTooltips();
+    });
+
+    $('#table_messages').on('mista.load', 'tr', function(event){
+        //<tr id=message_id>
+        var elemHeader = $(this).find('td[id^=tduser]');
+        var elemText = $(this).find('td[id^=tdmsg]');
+        run(elemHeader, elemText);
     });
 
     if (typeof $.ui == 'undefined') {
