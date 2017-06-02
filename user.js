@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         mista.ru
 // @namespace    http://tampermonkey.net/
-// @version      1.0.1
+// @version      1.0.2
 // @description  Make mista great again!
 // @author       You
 // @match        *.mista.ru/*
@@ -12,6 +12,7 @@
 // @updateURL    https://cdn.jsdelivr.net/gh/a-sitnikov/mista.js@latest/user.js
 // ==/UserScript==
 
+var mistaScriptVersion = '1.0.2';
 var tooltipsOrder = [];
 var tooltipsMap = {};
 var currentTopicId = 0;
@@ -109,6 +110,26 @@ function readOption(name) {
     return value;
 }
 
+function loadOptions(){
+    var keys = Object.keys(options);
+    for (var i in keys){
+        var name   = keys[i];
+        var option = options[name];
+        if (option.type === 'checkbox'){
+            if (option.value === 'true') $('#' + name).prop("checked", "checked");
+
+        } else if (option.type === 'radio'){
+            $('input:radio[name="' + name + '"][value="' +  option.value + '"]').prop("checked", "checked");
+
+        } else if (option.type === 'input'){
+            $('#' + name).val(option.value);
+
+        } else if (option.type === 'color'){
+            $('#' + name).val(option.value.toUpperCase());
+        }
+    }
+}
+
 function openMistaScriptOptions(){
     var html =
         '<div id="mista-script-overlay" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: #000; z-index:1000; opacity: 0.85"; pointer-events: none;></div>' +
@@ -117,7 +138,7 @@ function openMistaScriptOptions(){
              '     <b> x </b>' +
              '</span>' +
              '<div style="cursor: move; background:white; padding:4px; border-bottom:1px solid silver">' +
-                 '<b>Настройки Mista.Script</b>' +
+                 '<b>Настройки Mista.Script</b> version ' + mistaScriptVersion +
              '</div>' +
             '<div style="padding:5px">';
 
@@ -158,6 +179,7 @@ function openMistaScriptOptions(){
              '<div>' +
                   '<button id="applyOptions" class="sendbutton" style="margin: 5px">OK</button>' +
                   '<button id="cancelOptions" class="sendbutton" style="margin: 5px; float: left;">Отмена</button>' +
+                  '<button id="defaultOptions" class="sendbutton" style="margin: 5px; float: right;">Сбросить настройки</button>' +
              '</div>' +
         '</div>';
 
@@ -165,23 +187,7 @@ function openMistaScriptOptions(){
     $('#mista-script').draggable();
     $('body').css({"overflow-y": "hidden"});
 
-    var keys = Object.keys(options);
-    for (i in keys){
-        var name   = keys[i];
-        var option = options[name];
-        if (option.type === 'checkbox'){
-            if (option.value === 'true') $('#' + name).attr("checked", "checked");
-
-        } else if (option.type === 'radio'){
-            $('input:radio[name="' + name + '"][value="' +  option.value + '"]').attr("checked", "checked");
-
-        } else if (option.type === 'input'){
-            $('#' + name).val(option.value);
-
-        } else if (option.type === 'color'){
-            $('#' + name).val(option.value.toUpperCase());
-        }
-    }
+    loadOptions();
 
     $('#applyOptions').click(function(){
 
@@ -216,6 +222,14 @@ function openMistaScriptOptions(){
         $('body').css({"overflow-y": "auto"});
     });
 
+    $('#defaultOptions').click(function(){
+        var keys = Object.keys(options);
+        for (var i in keys){
+            var name = keys[i];
+            options[name].value = options[name].default;
+        }
+        loadOptions();
+    });
 }
 
 // ----------------Tooltips-------------------------------------
@@ -564,6 +578,7 @@ function run(parentElemHeader, parentElemText, onlyBindEvents){
         if (processLinkToPost(this, url, onlyBindEvents)) return;
 
     });
+
 }
 
 (function() {
@@ -594,7 +609,9 @@ function run(parentElemHeader, parentElemText, onlyBindEvents){
     });
 
     if (typeof $.ui == 'undefined') {
-        $.getScript('https://code.jquery.com/ui/1.12.1/jquery-ui.min.js', run);
+        $.getScript('https://code.jquery.com/ui/1.12.1/jquery-ui.min.js', function(){
+            run();
+        });
     } else {
         run();
     }
