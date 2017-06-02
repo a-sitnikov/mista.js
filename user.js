@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         mista.ru
 // @namespace    http://tampermonkey.net/
-// @version      1.0.0
+// @version      1.0.1
 // @description  Make mista great again!
 // @author       You
 // @match        *.mista.ru/*
@@ -65,7 +65,13 @@ function utimeToDate(utime) {
 }
 
 function parseJSON(text) {
-    return eval(text);
+    try {
+        return eval(text);
+    } catch(e) {
+        console.log(e.message);
+        console.log(text);
+        return null;
+    }
 }
 
 function processLinkToMistaCatalog(element, url) {
@@ -275,7 +281,7 @@ function setMsgTextAjax(topicId, msgId, elemHeader, elemText){
         url: apiUrl
     }).done(function(data) {
         dataObj = parseJSON(data);
-        if (!dataObj) {
+        if (!dataObj || dataObj.length === 0) {
             elemText.text('Сообщение не найдено');
             return;
         }
@@ -289,6 +295,10 @@ function setMsgTextAjax(topicId, msgId, elemHeader, elemText){
             if (elemHeader) elemHeader.html(user);
             run(elemHeader, elemText);
             elemText.find('img').css('max-width: 642px');
+        } else {
+            elemHeader.html('<b>Сообщение не найдено</b>');
+            elemText.html('Возможно оно скрыто или удалено');
+            return;
         }
     });
 }
