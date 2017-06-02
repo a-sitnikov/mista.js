@@ -1,8 +1,8 @@
 ﻿// ==UserScript==
 // @name         mista.ru
 // @namespace    http://tampermonkey.net/
-// @version      0.8.1
-// @description  try to take over the world!
+// @version      0.9
+// @description  Make mista great again!
 // @author       You
 // @match        *.mista.ru/*
 // @grant        none
@@ -14,45 +14,43 @@
 
 var tooltipsOrder = [];
 var tooltipsMap = {};
-var tooltipDelay = 0;
-var maxImgWidth = 0;
-var maxYoutubeTitle = 0;
 var currentTopicId = 0;
+var yourUrl;
+var topicAuthor;
 
-var defaultOptions = {
-    "show-tooltips":         "true",
-    "tooltip-delay":         "500",
-    "replace-catalog-to-is": "true",
-    "mark-author":           "true",
-    "author-color":          "#ffd784",
-    "mark-yourself":         "true",
-    "yourself-color":        "#9bc5ef",
-    "show-userpics":         "onMouseOver",
-    "show-imgs":             "onMouseOver",
-    "max-img-width":         "500",
-    "show-youtube-title":    "true",
-    "max-youtube-title":     "40",
-    "first-post-tooltip":    "true"
+var options = {
+    "show-tooltips":         {default: "true",        type: "checkbox", label: "Показывать тултипы, задержка"},
+    "tooltip-delay":         {default: "500",         type: "input",    label: "", suffix: "мс", width: "50"},
+    "replace-catalog-to-is": {default: "true",        type: "checkbox", label: "Обратно заменять catalog.mista.ru на infostart.ru"},
+    "mark-author":           {default: "true",        type: "checkbox", label: "Подсвечивать автора цветом"},
+    "author-color":          {default: "#ffd784",     type: "color",    label: "", width: "100"},
+    "mark-yourself":         {default: "true",        type: "checkbox", label: "Подсвечивать себя цветом"},
+    "yourself-color":        {default: "#9bc5ef",     type: "color",    label: "", width: "100"},
+    "show-userpics":         {default: "onMouseOver", type: "radio",    label: "Показывать фото пользователей",
+                              values:[{v: "showAlways", descr: "Показывать всегда"}, {v: "showThumbs", descr: "Показывать thumbs"}, {v: "onMouseOver", descr: "При наведении"}, {v: "no", descr: "Не показывать"}]},
+    "max-userpic-width":     {default: "100",         type: "input",    label: "Макс. ширина фото", suffix: "px. Желательно не более 150", width: "50"},
+    "show-imgs":             {default: "onMouseOver", type: "radio",    label: "Показывать картинки",
+                              values:[{v: "showAlways", descr: "Показывать всегда"}, {v: "onMouseOver", descr: "При наведении"}, {v: "no", descr: "Не показывать"}]},
+    "max-img-width":         {default: "500",         type: "input",    label: "Макс. ширина картинки", suffix: "px", width: "50"},
+    "show-youtube-title":    {default: "true",        type: "checkbox", label: "Показывать наименования роликов youtube, макс. длина"},
+    "max-youtube-title":     {default: "40",          type: "input",    label: "", suffix: "символов", width: "50"},
+    "youtube-prefix":        {default: "youtube",     type: "input",    label: "Префикс youtube", suffix: "", width: "100"},
+    "first-post-tooltip":    {default: "true",        type: "checkbox", label: "Отображать тултип нулевого поста ссыки на другую ветку"}
 };
 
-function getImgUrl(url) {
-    if (url.search("ximage.ru/index.php") !== -1) {
-        var imgId = url.match(/id=(.+)$/)[1];
-        return "http://ximage.ru/data/imgs/" + imgId + ".jpg";
-
-    } else if (url.search(/.+\.(jpg|jpeg|png)$/) !== -1) {
-        return url;
-    }
-}
-
-function getMsgId(elem){
-    var url = $(elem).attr("href");
-    try {
-        return url.match(/#[0-9]+/)[0].substring(1);
-    } catch(error) {
-    }
-    return null;
-}
+var formOptions = [
+    ['show-tooltips', 'tooltip-delay'],
+    ['replace-catalog-to-is'],
+    ['first-post-tooltip'],
+    ['mark-author', 'author-color'],
+    ['mark-yourself', 'yourself-color'],
+    ['show-userpics'],
+    ['max-userpic-width'],
+    ['show-imgs'],
+    ['max-img-width'],
+    ['show-youtube-title', 'max-youtube-title'],
+    ['youtube-prefix']
+];
 
 function utimeToDate(utime) {
     var a = new Date(utime*1000);
@@ -66,24 +64,42 @@ function utimeToDate(utime) {
     return date + '.' + month + '.' + year + ' - ' + hours + ':' + minutes.substr(-2);
 }
 
-function normalizeJSON(text) {
-    text = text.replace(/\\r\\/g, "");
-    text = text.replace(/\\>/g, ">");
-    text = text.replace(/\\</g, "<");
-    text = text.replace(/\\\//g, "/");
-    text = text.replace(/\\"/g, "'");
-    text = text.replace(/\\&/g, '&');
-    return text;
+function parseJSON(text) {
+    return eval(text);
 }
 
-// ----------------Tooltips-------------------------------------
+function processLinkToMistaCatalog(element, url) {
+    //http://www.forum.mista.ru/topic.php?id=783361
+    if (url.search("catalog.mista.ru") === -1) return false;
+
+    if (options["replace-catalog-to-is"].value === 'true') {
+        var text = $(element).text();
+        var newUrl   = url.replace(/catalog.mista/i, "infostart");
+        var newTrext = text.replace(/catalog.mista/i, "infostart");
+
+        $(element).attr("href", newUrl);
+        $(element).text(newTrext);
+    }
+
+    return true;
+}
+
+// ----------------Options-------------------------------------
+function readAllOptions(){
+    var keys = Object.keys(options);
+    for (var i in keys) {
+        var name = keys[i];
+        options[name].value = readOption(name, options[name].default);
+    }
+}
+
 function saveOption(name, value) {
     window.localStorage.setItem(name, String(value));
 }
 
 function readOption(name) {
     var value = window.localStorage.getItem(name);
-    if (!value) value = defaultOptions[name];
+    if (!value) value = options[name].default;
     return value;
 }
 
@@ -91,116 +107,114 @@ function openMistaScriptOptions(){
     var html =
         '<div id="mista-script-overlay" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: #000; z-index:1000; opacity: 0.85"; pointer-events: none;></div>' +
         '<div id="mista-script" style="position:fixed; left: 25%; top: 25%; background:#FFFFE1; border:1px solid #000000; width:630px; font-weight:normal; z-index: 1001">' +
-            '<div style="cursor: move; background:white; padding:4px; border-bottom:1px solid silver">' +
+             '<span id="closeOptions" style="POSITION: absolute; RIGHT: 6px; TOP: 3px; cursor:hand; cursor:pointer">'+
+             '     <b> x </b>' +
+             '</span>' +
+             '<div style="cursor: move; background:white; padding:4px; border-bottom:1px solid silver">' +
                  '<b>Настройки Mista.Script</b>' +
              '</div>' +
-            '<div style="padding:5px">' +
-                '<div style="margin-bottom:5px">' +
-                    '<input id="showTooltips" type="checkbox" name="showTooltips" value="showTooltips">' +
-                    '<label for="showTooltips">Показывать тултипы, задержка</label>' +
-                    '<input id="tooltipDelay" name="tooltipDelay" style="margin-left:5px; width: 50px" value="tooltipDelay"> мс' +
-                '</div>' +
-                '<div style="margin-bottom:5px">' +
-                    '<input id="replaceCatalogToIS" type="checkbox" name="replaceCatalogToIS" value="replaceCatalogToIS">' +
-                    '<label for="replaceCatalogToIS">Обратно заменять catalog.mista.ru на infostart.ru</label>' +
-                '</div>' +
-                '<div style="margin-bottom:5px">' +
-                    '<input id="firstPostTooltip" type="checkbox" name="firstPostTooltip" value="firstPostTooltip">' +
-                    '<label for="firstPostTooltip">Отображать тултип нулевого поста ветки</label>' +
-                '</div>' +
-                '<div style="margin-bottom:5px">' +
-                    '<input id="markAuthor" type="checkbox" name="markAuthor" value="markAuthor">' +
-                    '<label for="markAuthor">Подсвечивать автора цветом</label>' +
-                    '<input id="authorColor" type="color" name="authorColor" style="margin-left:5px; width: 100px" value="authorColor">' +
-                '</div>' +
-                 '<div style="margin-bottom:5px">' +
-                    '<input id="markYourself" type="checkbox" name="markYourself" value="markYourself">' +
-                    '<label for="markYourself">Подсвечивать себя цветом</label>' +
-                    '<input id="yourselfColor" type="color" name="yourselfColor" style="margin-left:5px; width: 100px" value="yourselfColor">' +
-                '</div>' +
-                '<div style="margin-bottom:5px">' +
-                    '<label for="showUserpics">Показывать фото пользователей</label><br>' +
-                    '<input type="radio" name="showUserpics" value="showAlways" checked> Показывать всегда' +
-                    '<input type="radio" name="showUserpics" value="onMouseOver"> При наведении' +
-                    '<input type="radio" name="showUserpics" value="no"> Не показывать' +
-                '</div>' +
-                '<div style="margin-bottom:5px">' +
-                    '<label for="showImgs">Показывать картинки</label><br>' +
-                    '<input type="radio" name="showImgs" value="showAlways" checked> Показывать всегда' +
-                    '<input type="radio" name="showImgs" value="onMouseOver"> При наведении' +
-                    '<input type="radio" name="showImgs" value="no"> Не показывать' +
-                '</div>' +
-                '<div style="margin-bottom:5px">' +
-                    '<label for="maxImgWidth">Макс. ширина картинки</label>' +
-                    '<input id="maxImgWidth" name="maxImgWidth" style="margin-left:5px; width: 50px;" value="maxImgWidth"> px' +
-                '</div>' +
-                '<div style="margin-bottom:5px">' +
-                    '<input id="youtubeTitle" type="checkbox" name="youtubeTitle" value="youtubeTitle">' +
-                    '<label for="youtubeTitle">Показывать наименования роликов youtube, макс. длина</label>' +
-                    '<input id="maxYoutubeTitle" name="maxYoutubeTitle" style="margin-left:5px; width: 50px" value="maxYoutubeTitle"> символов' +
-                '</div>' +
-                '<div>После применения настроек страницу нужно перезагрузить</div>' +
-                '<div>' +
-                    '<button id="applyOptions" class="sendbutton" style="margin: 5px">OK</button>' +
-                    '<button id="cancelOptions" class="sendbutton" style="margin: 5px; float: left;">Отмена</button>' +
-                '</div>' +
-            '</div>' +
-         '</div>';
+            '<div style="padding:5px">';
+
+    for (var i in formOptions){
+        html += '<div style="margin-bottom:5px">';
+
+        var row = formOptions[i];
+        for (var j in row){
+
+            var name = row[j];
+            var option = options[name];
+
+            if (option.type === 'checkbox') {
+                html += '<input id="' + name +'" type="checkbox" name="' + name +'" value="' + name +'">' +
+                    '<label for="' + name +'">' + option.label + '</label>';
+
+            } else if (option.type === 'input' || option.type === 'color') {
+                if (option.label){
+                    html += '<label for=' + name + '">' + option.label + '</label>';
+                }
+                html += '<input id="' + name + '" name="' + name + '" style="margin-left:5px; width: ' + option.width + 'px"' + (option.type === 'color' ? ' type="color"': '') + '>';
+                if (option.suffix){
+                    html += ' ' + option.suffix;
+                }
+            } else if (option.type === 'radio') {
+                html += '<label for="' + name +'">' + option.label + '</label><br>';
+                for (var k in option.values){
+                    var value = option.values[k];
+                    html += '<input type="radio" name="' + name +'" value="' + value.v + '"> ' + value.descr;
+                }
+            }
+        }
+
+        html += '</div>';
+    }
+    html +=
+        '<div>После применения настроек страницу нужно перезагрузить</div>' +
+             '<div>' +
+                  '<button id="applyOptions" class="sendbutton" style="margin: 5px">OK</button>' +
+                  '<button id="cancelOptions" class="sendbutton" style="margin: 5px; float: left;">Отмена</button>' +
+             '</div>' +
+        '</div>';
 
     $(html).appendTo('#body');
     $('#mista-script').draggable();
-
     $('body').css({"overflow-y": "hidden"});
 
-    if (readOption("show-tooltips") === 'true')         $('#showTooltips').attr("checked", "checked");
-    $("#tooltipDelay").val(readOption("tooltip-delay"));
+    var keys = Object.keys(options);
+    for (i in keys){
+        var name   = keys[i];
+        var option = options[name];
+        if (option.type === 'checkbox'){
+            if (option.value === 'true') $('#' + name).attr("checked", "checked");
 
-    if (readOption("replace-catalog-to-is") === 'true') $('#replaceCatalogToIS').attr("checked", "checked");
-    if (readOption("first-post-tooltip") === 'true')    $('#firstPostTooltip').attr("checked", "checked");
-    if (readOption("mark-author") === 'true')           $('#markAuthor').attr("checked", "checked");
-    $("#authorColor").val(readOption("author-color"));
+        } else if (option.type === 'radio'){
+            $('input:radio[name="' + name + '"][value="' +  option.value + '"]').attr("checked", "checked");
 
-    if (readOption("mark-yourself") === 'true')         $('#markYourself').attr("checked", "checked");
-    $("#yourselfColor").val(readOption("yourself-color"));
+        } else if (option.type === 'input'){
+            $('#' + name).val(option.value);
 
-    $('input:radio[name=showUserpics]').val([readOption("show-userpics")]);
-    $('input:radio[name=showImgs]').val([readOption("show-imgs")]);
-    $("#maxImgWidth").val(readOption("max-img-width"));
-
-    if (readOption("show-youtube-title") === 'true')    $('#youtubeTitle').attr("checked", "checked");
-    $("#maxYoutubeTitle").val(readOption("max-youtube-title"));
+        } else if (option.type === 'color'){
+            $('#' + name).val(option.value.toUpperCase());
+        }
+    }
 
     $('#applyOptions').click(function(){
 
-        saveOption("show-tooltips",         $('#showTooltips').is(':checked'));
-        saveOption("tooltip-delay",         $('#tooltipDelay').val());
-        saveOption("replace-catalog-to-is", $('#replaceCatalogToIS').is(':checked'));
-        saveOption("mark-author",           $('#markAuthor').is(':checked'));
-        saveOption("author-color",          $('#authorColor').val());
-        saveOption("mark-yourself",         $('#markYourself').is(':checked'));
-        saveOption("yourself-color",        $('#yourselfColor').val());
-        saveOption("show-userpics",         $('input:radio[name=showUserpics]:checked').val());
-        saveOption("show-imgs",             $('input:radio[name=showImgs]:checked').val());
-        saveOption("max-img-width",         $('#maxImgWidth').val());
-        saveOption("show-youtube-title",    $('#youtubeTitle').is(':checked'));
-        saveOption("max-youtube-title",     $('#maxYoutubeTitle').val());
-        saveOption("first-post-tooltip",    $('#firstPostTooltip').val());
+        var keys = Object.keys(options);
+        for (var i in keys){
+            var name   = keys[i];
+            var option = options[name];
+            if (option.type === 'checkbox'){
+                option.value = String($('#' + name).is(':checked'));
+
+            } else if (option.type === 'radio'){
+                option.value = $('input:radio[name=' + name + ']:checked').val();
+
+            } else if (option.type === 'input'){
+                option.value = $('#' + name).val();
+
+            } else if (option.type === 'color'){
+                option.value = $('#' + name).val();
+            }
+
+            saveOption(name, option.value);
+        }
 
         $('#mista-script').remove();
         $('#mista-script-overlay').remove();
         $('body').css({"overflow-y": "auto"});
     });
 
-    $('#cancelOptions').click(function(){
+    $('#cancelOptions, #closeOptions').click(function(){
         $('#mista-script').remove();
         $('#mista-script-overlay').remove();
         $('body').css({"overflow-y": "auto"});
     });
+
 }
 
 // ----------------Tooltips-------------------------------------
 function tooltipHtml(msgId) {
-    return '<div id=tooltip' + msgId+ ' msg-id=' + msgId + ' class="gensmall" style="position:absolute; background:#FFFFE1; border:1px solid #000000; width:630px; font-weight:normal;">'+
+    return '<div id=tooltip' + msgId+ ' msg-id=' + msgId + ' class="gensmall" style="position:absolute; background:#FFFFE1; border:1px solid #000000; min-width: 600px; width:auto; max-width: 1200px; font-weight:normal;">'+
         '<div id=tooltip-header' + msgId+ ' msg-id=' + msgId + '  style="cursor: move; background:white; padding:4px; border-bottom:1px solid silver"><span><b>Подождите...</b></span></div>' +
         '<div id=tooltip-text' + msgId+ ' msg-id=' + msgId + '  style="padding:4px"><span>Идет ajax загрузка.<br/>Это может занять некоторое время.</span></div>' +
         '<span id=tooltip-close' + msgId + ' msg-id=' + msgId + '  style="POSITION: absolute; RIGHT: 6px; TOP: 3px; cursor:hand; cursor:pointer">'+
@@ -231,28 +245,34 @@ function removeAllTooltips() {
     tooltipsOrder = [];
 }
 
-function setMsgText(msgId, elemAuthor, elemText){
-    var author = $('#tduser' + msgId).html();
-    var text = $('#' + msgId).html();
-    if (text) {
-        elemAuthor.html(author);
+function setMsgText(topicId, msgId, elemHeader, elemText){
+    var user;
+    if (topicId === currentTopicId) user = $('#tduser' + msgId).html();
+    if (user) {
+        elemHeader.html(user);
+        var text = $('#' + msgId).html();
+        if (!text) {
+            // hidden message
+            try {
+                text = hidden_messages[+msgId];
+            } catch(e) {}
+        }
         elemText.html(text);
-        addTooltips(elemText);
+        run(elemHeader, elemText, true);
     } else {
-        setMsgTextAjax(null, msgId, elemAuthor, elemText);
+        setMsgTextAjax(topicId, msgId, elemHeader, elemText);
     }
 
 }
 
 function setMsgTextAjax(topicId, msgId, elemHeader, elemText){
 
-    if (!topicId) topicId = currentTopicId;
     var apiUrl = "ajax_topic.php?id=" + topicId + "&from=" + msgId + "&to=" + (parseInt(msgId) + 1);
 
     $.ajax({
         url: apiUrl
     }).done(function(data) {
-        dataObj = eval(data);
+        dataObj = parseJSON(data);
         if (!dataObj) {
             elemText.text('Сообщение не найдено');
             return;
@@ -265,46 +285,14 @@ function setMsgTextAjax(topicId, msgId, elemHeader, elemText){
                 "<span class='message-info'>" + msg.n + " - " + utimeToDate(msg.utime) + "</span>";
             elemText.html(text);
             if (elemHeader) elemHeader.html(user);
-            addTooltips(elemText);
+            run(elemHeader, elemText);
         }
     });
 }
 
-function addTooltips(parentElem) {
-
-    if (!parentElem) parentElem = $(document);
-
-    parentElem.find('a[href^="#"], a[href^="topic.php?id="]')
-       .filter(function(index){
-           var href = $(this).attr("href");
-           return href.search(/#[0-9]+/) !== -1;
-        })
-       .each(function(){
-            var msgId = getMsgId(this);
-            attachTooltip(this, msgId, loadDataMsg());
-       });
-}
-
-function loadDataImg(url, header){
-
-    if (!header) header = 'Картинка';
-
-    return function(id){
-        $('#tooltip-header' + id).html('<b>' + header + '</b>');
-        $('#tooltip-text' + id).html('<img src="' + url + '" style="max-width: ' + maxImgWidth + 'px; height:auto;">');
-        $('#tooltip-text' + id + ' img').on('load', function(){
-            if ($(this).height() === 1) {
-                $('#tooltip-text' + id).text('Картинка отсутствует');
-            } else {
-                $('#tooltip' + id).width($(this).width() + 8);
-            }
-        });
-    };
-}
-
-function loadDataMsg(){
-    return function(id) {
-        setMsgText(id, $("#tooltip-header" + id), $("#tooltip-text" + id));
+function loadDataMsg(topicId, msgId){
+    return function() {
+        setMsgText(topicId, msgId, $("#tooltip-header" + msgId), $("#tooltip-text" + msgId));
     };
 }
 
@@ -338,8 +326,8 @@ function attachTooltip(link, id, loadDataFunc) {
     $(link).hover(function(){
         timer = setTimeout(function() {
             createTooltip(link, id);
-            loadDataFunc(id);
-        }, +tooltipDelay);
+            loadDataFunc();
+        }, +options['tooltip-delay'].value);
     },
     function() {
         // on mouse out, cancel the timer
@@ -347,9 +335,87 @@ function attachTooltip(link, id, loadDataFunc) {
     });
 }
 
+function processLinkToPost(element, url, onlyBindEvents) {
+    var topicId, msgId;
+    try {
+        topicId = url.match(/id=([0-9]+)($|\&)/)[1];
+    } catch(e) {}
+    try {
+        msgId = url.match(/#([0-9]+)/)[1];
+    } catch(e) {}
+
+    if (!topicId && !msgId) return false;
+
+    if (!topicId) topicId = currentTopicId;
+    if (!msgId) msgId = "0";
+
+    if (topicId !== currentTopicId) {
+        if (options['first-post-tooltip'].value !== 'true') {
+            return true;
+        } else {
+            if (!onlyBindEvents) $('<span class="agh" style="cursor: pointer">[?]</span>').insertAfter($(element));
+        }
+    }
+
+    if (topicId === currentTopicId && options['show-tooltips'].value !== 'true') return true;
+
+    attachTooltip(element, msgId, loadDataMsg(topicId, msgId));
+}
+
+// ----------------Images--------------------------------------
+function loadDataImg(url, id, header){
+
+    if (!header) header = 'Картинка';
+
+    return function(){
+        $('#tooltip-header' + id).html('<b>' + header + '</b>');
+        $('#tooltip-text' + id).html('<img src="' + url + '" style="max-width: ' + options['max-img-width'].value + 'px; height:auto;">');
+        $('#tooltip-text' + id + ' img').on('load', function(){
+            if ($(this).height() === 1) {
+                $('#tooltip-text' + id).text('Картинка отсутствует');
+            } else {
+                $('#tooltip' + id).width($(this).width() + 8);
+            }
+        });
+    };
+}
+
+function getImgUrl(url) {
+    if (url.search("ximage.ru/index.php") !== -1) {
+        var imgId = url.match(/id=(.+)$/)[1];
+        return "http://ximage.ru/data/imgs/" + imgId + ".jpg";
+
+    } else if (url.search(/.+\.(jpg|jpeg|png)$/) !== -1) {
+        return url;
+    }
+}
+
+function processLinkToImage(element, url, onlyBindEvents) {
+
+    var imgUrl = getImgUrl(url);
+    if (!imgUrl) return false;
+    if ($(element).text() === '') return true;
+
+    if (options['show-imgs'].value === 'showAlways'){
+        if (!onlyBindEvents) {
+            $(element).text("");
+            $('<img src="' + imgUrl + '" style="max-width: ' + options['max-img-width'].value + 'px; height:auto;"/>').appendTo($(element));
+        }
+
+    } else if (options['show-imgs'].value === 'onMouseOver') {
+        if (!onlyBindEvents) $('<span class="agh" style="cursor: pointer">[?]</span>').insertAfter($(element));
+        attachTooltip(element, '_p', loadDataImg(imgUrl, "_p"));
+    }
+
+    return true;
+}
+
 // ----------------Youtube-------------------------------------
-function setYoutubeTitle(link, videoId) {
-    var apiUrl = "https://www.googleapis.com/youtube/v3/videos?key=AIzaSyBPtVWaQ7iGkObgyavKoNVQdfPwczAdQUE&&fields=items(snippet(title))&part=snippet&id=" + videoId;
+function setYoutubeTitle(link, videoId, onlyBindEvents) {
+
+    if (onlyBindEvents) return;
+
+    var apiUrl = 'https://www.googleapis.com/youtube/v3/videos?key=AIzaSyBPtVWaQ7iGkObgyavKoNVQdfPwczAdQUE&&fields=items(snippet(title))&part=snippet&id=' + videoId;
 
     $.ajax({
         url: apiUrl
@@ -357,9 +423,9 @@ function setYoutubeTitle(link, videoId) {
         try {
             var fullTitle = data.items[0].snippet.title;
             var title = fullTitle;
-            if (fullTitle.length > maxYoutubeTitle) title = title.substring(0, maxYoutubeTitle) + "...";
-            $(link).text("youtube: " + title);
-            $(link).attr("title", fullTitle);
+            if (fullTitle.length > options['max-youtube-title'].value) title = title.substring(0, options['max-youtube-title'].value) + '...';
+            $(link).text(options['youtube-prefix'].value + ': ' + title);
+            $(link).attr('title', fullTitle);
         } catch(e) {
             console.log(e.message);
             console.log(data);
@@ -367,65 +433,59 @@ function setYoutubeTitle(link, videoId) {
     });
 }
 
-function run(){
+function processLinkToYoutube(element, url, onlyBindEvents) {
 
-    tooltipDelay = readOption('tooltip-delay');
-    maxImgWidth = readOption('max-img-width');
-    maxYoutubeTitle = readOption('max-youtube-title');
-
-    var currentUrl = window.location.href;
-    try {
-        currentTopicId = currentUrl.match(/id=([0-9]+)/)[1];
-    } catch(e){}
-
-    $('body').click(function(e){
-        //console.log($(e.target).closest('div[id^=tooltip]').length);
-        if ($(e.target).closest('div[id^=tooltip]').length === 0) removeAllTooltips();
-    });
-    if (readOption('show-tooltips') === 'true') {
-        addTooltips();
-    }
-
-    if (readOption("replace-catalog-to-is") === 'true') {
-        // change catalog.mista.ru to infostart
-        $('a:contains("catalog.mista.ru")').each(function(){
-            var url  = $(this).attr("href");
-            var text = $(this).text();
-            var newUrl   = url.replace(/catalog.mista/i, "infostart");
-            var newTrext = text.replace(/catalog.mista/i, "infostart");
-            $(this).attr("href", newUrl);
-            $(this).text(newTrext);
-        });
-    }
-
-    if (readOption("mark-author") === 'true') {
-        // a - if logged in, span - otherwise
-        var user = $("span, a",  "#tduser0").text();
-        if (user) {
-            var authorColor = readOption("author-color");
-            $('a:contains("' + user + '")', "td[id^=tduser]").css({"background": authorColor});
-            $('span:contains("' + user + '")', "td[id^=tduser]").css({"background": authorColor});
+    var videoId;
+    // youtube.com/watch?v=videoId
+    if (url.search(/youtube/) !== -1) {
+        if (options['show-youtube-title'].value === 'true'){
+            try{
+                videoId = url.match(/v=(.+)(\&|$)/)[1];
+            } catch(e){}
+            if (videoId) setYoutubeTitle(element, videoId, onlyBindEvents);
         }
+        return true;
     }
 
-    if (readOption("mark-yourself") === 'true') {
-        // a - if logged in, span - otherwise
-        var yourUrl = $('a[href*="users.php?id="]',  "#user-td").attr("href");
-        var yourColor = readOption("yourself-color");
-        $('a[href="' +yourUrl + '"]', "td[id^=tduser]").css({"background": yourColor});
+    // youtu.be/videoId
+    if (url.search(/youtu.be/) !== -1) {
+        if (options['show-youtube-title'].value === 'true'){
+            try{
+                videoId = url.match(/e\/(.+)(\&|$)/)[1];
+            } catch(e){}
+            if (videoId) setYoutubeTitle(link, videoId, onlyBindEvents);
+        }
+        return true;
     }
 
-    var showUserpics = readOption('show-userpics');
-    if (showUserpics === 'showAlways') {
+    return false;
+}
 
-        var userPostMap = {};
-        $('a[href*="users.php?id"]', "td[id^=tduser]").each(function(){
-            var userId = $(this).attr('data-user_id');
-            var url = "/users_photo/mid/" + userId + ".jpg";
-            var msgId = +$(this).parent().attr('id').replace('tduser', '');
+// ----------------Users---------------------------------------
+function processUserpic(element, url, userPostMap, onlyBindEvents) {
 
+    if (options['show-userpics'].value === 'no') return;
+    var userId = $(element).attr('data-user_id');
+    if (!userId) return;
+
+    var imgUrl;
+    if (options['show-userpics'].value === 'showThumbs') {
+        imgUrl = "/users_photo/thumb/" + userId + ".jpg";
+    } else {
+        imgUrl = "/users_photo/mid/" + userId + ".jpg";
+    }
+
+    if (options['show-userpics'].value === 'onMouseOver') {
+        var user = $(element).text();
+        attachTooltip(element, '_p', loadDataImg(imgUrl, '_p', user));
+
+    } else {
+        if (!onlyBindEvents) {
+
+            var msgId = +$(element).parent().attr('id').replace('tduser', '');
             if (userPostMap[msgId - 1] !== userId) {
-                var img = $('<img src="' + url + '" style="max-width: 100px;"><br>').insertBefore($(this));
+
+                var img = $('<img src="' + imgUrl + '" style="max-width: ' + options['max-userpic-width'].value + 'px; height: auto"><br>').insertBefore($(element));
                 img.on('load', function(){
                     // Delete empty image to remove empty space
                     if ($(this).height() === 1) {
@@ -434,90 +494,84 @@ function run(){
                 });
             }
             userPostMap[msgId] = userId;
-        });
+        }
+     }
+}
 
-    } else if (showUserpics === 'onMouseOver') {
+function processLinkToAuthor(element, url, onlyBindEvents) {
 
-        $('a[href*="users.php?id"]', "td[id^=tduser]").each(function(){
+    if ($(element).text() !== topicAuthor) return false;
+    if (options['mark-author'].value !== 'true') return false;
+    if (onlyBindEvents) return true;
 
-            var userId = $(this).attr('data-user_id');
-            var user = $(this).text();
-            var imgUrl = "/users_photo/mid/" + userId + ".jpg";
+    $(element).css({'background': options['author-color'].value});
+    return true;
+}
 
-            attachTooltip(this, '_p', loadDataImg(imgUrl, user));
+function processLinkToYourself(element, url, onlyBindEvents) {
 
-        });
-    }
+    if (url !== yourUrl) return false;
+    if (options['mark-yourself'].value !== 'true') return false;
+    if (onlyBindEvents) return true;
 
-    var showImgs = readOption('show-imgs');
-    if (showImgs === 'showAlways'){
+    $(element).css({'background': options['yourself-color'].value});
+    return true;
+}
 
-        $('a').each(function(a){
+// ----------------Run-----------------------------------------
+function run(parentElemHeader, parentElemText, onlyBindEvents){
 
-            var url = $(this).attr("href");
-            var imgUrl = getImgUrl(url);
-            if (imgUrl){
-                $(this).text("");
-                $('<img src="' + imgUrl + '" style="max-width: ' + maxImgWidth + 'px; height:auto;"/>').appendTo($(this));
-            }
+    if (!parentElemHeader) parentElemHeader = $('td[id^=tduser]');
+    if (!parentElemText) parentElemText = $('td[id^=tdmsg]');
 
-        });
+    // Process all links in the user name area
+    var userPostMap = {};
+    parentElemHeader.find('a').each(function(a){
 
-    } else if (showImgs === 'onMouseOver') {
+        var url = $(this).attr('href');
+        processUserpic(this, url, userPostMap, onlyBindEvents);
+        if (processLinkToAuthor(this, url, onlyBindEvents)) return;
+        if (processLinkToYourself(this, url, onlyBindEvents)) return;
 
-        $('a').each(function(a){
-            var url = $(this).attr("href");
-            var imgUrl = getImgUrl(url);
-            if (imgUrl){
-                var link = $('<span class="agh" style="cursor: pointer">[?]</span>').insertAfter($(this));
-                attachTooltip(this, '_p', loadDataImg(imgUrl));
-            }
-        });
-    }
+    });
+
+    // Process all links in the message area
+    parentElemText.find('a').each(function(a){
+
+        var url = $(this).attr('href');
+        if (processLinkToImage(this, url, onlyBindEvents)) return;
+        if (processLinkToYoutube(this, url, onlyBindEvents)) return;
+        if (processLinkToMistaCatalog(this, url, onlyBindEvents)) return;
+        if (processLinkToPost(this, url, onlyBindEvents)) return;
+
+    });
+/*
+    $('#table_messages').on('mista.load', 'tr', function(data){
+        console.log(data);
+    });
+    */
+}
+
+(function() {
+
+    var currentUrl = window.location.href;
+    try {
+        currentTopicId = currentUrl.match(/id=([0-9]+)/)[1];
+    } catch(e){}
+
+    yourUrl = $('a[href*="users.php?id="]',  "#user-td").attr("href");
+    topicAuthor = $("a",  "#tduser0").text();
+
+    readAllOptions();
 
     $('<li class="nav-item"><a href="#">Настройки Mista.Script</a></li>')
         .appendTo("ul.nav-bar")
         .click(openMistaScriptOptions);
 
-    if (readOption('show-youtube-title') === 'true'){
+    $('body').click(function(e){
+        if ($(e.target).closest('div[id^=tooltip]').length === 0) removeAllTooltips();
+    });
 
-        $('a[href*="youtube"]').each(function(){
-            var link = this;
-            var url = $(this).attr("href");
-            var videoId;
-            try{
-                videoId = url.match(/v=(.+)(\&|$)/)[1];
-            } catch(e){}
-            if (videoId) setYoutubeTitle(link, videoId);
-        });
-
-        $('a[href*="youtu.be"]').each(function(){
-            var link = this;
-            var url = $(this).attr("href");
-            var videoId = url.match(/e\/(.+)(\&|$)/)[1];
-
-            setYoutubeTitle(link, videoId);
-        });
-    }
-
-    if (readOption('first-post-tooltip') === 'true'){
-        $('a[href*="topic.php?"]', "td[id^=tdmsg]")
-            .filter(function(a){
-                return $(this).text().search(/^[0-9]+$/) === -1;
-             } )
-            .each(function(){
-                $('<span class="agh" style="cursor: pointer">[?]</span>').insertAfter($(this));
-                var topicId = $(this).attr("href").match(/id=([0-9]+)($|\&)/)[1];
-                var msgId = "_0_0";
-                attachTooltip(this, msgId, function(){
-                    setMsgTextAjax(topicId, "0", $("#tooltip-header" + msgId),  $("#tooltip-text" + msgId));
-                });
-            });
-    }
-
-}
-
-(function() {
     if (typeof $.ui == 'undefined') {
         $.getScript('https://code.jquery.com/ui/1.12.1/jquery-ui.min.js', run);
     } else {
