@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         mista.ru
 // @namespace    http://tampermonkey.net/
-// @version      1.1.1
+// @version      1.1.3
 // @description  Make mista great again!
 // @author       acsent
 // @match        *.mista.ru/*
@@ -13,14 +13,14 @@
 // @updateURL    https://cdn.jsdelivr.net/gh/a-sitnikov/mista.js@latest/user.js
 // ==/UserScript==
 
-var mistaScriptVersion = '1.1.1';
-var tooltipsOrder = [];
-var tooltipsMap = {};
-var currentTopicId = 0;
-var yourUrl;
-var topicAuthor;
+const mistaScriptVersion = '1.1.3';
+let tooltipsOrder = [];
+let tooltipsMap = {};
+let currentTopicId = 0;
+let yourUrl;
+let topicAuthor;
 
-var options = {
+let options = {
     "show-tooltips":         {default: "true",        type: "checkbox", label: "Показывать тултипы, задержка"},
     "tooltip-delay":         {default: "500",         type: "input",    label: "", suffix: "мс", width: "50"},
     "replace-catalog-to-is": {default: "true",        type: "checkbox", label: "Обратно заменять catalog.mista.ru на infostart.ru"},
@@ -42,7 +42,7 @@ var options = {
     "user-autocomplete":     {default: "true",        type: "checkbox", label: "Дополнение имен пользователей. При написании @"}
 };
 
-var formOptions = [
+let formOptions = [
     ['show-tooltips', 'tooltip-delay'],
     ['replace-catalog-to-is'],
     ['first-post-tooltip'],
@@ -59,13 +59,13 @@ var formOptions = [
 ];
 
 function utimeToDate(utime) {
-    var a = new Date(utime*1000);
+    let a = new Date(utime*1000);
 
-    var year  = a.getYear();
-    var month = a.getMonth();
-    var date  = a.getDate();
-    var hours = a.getHours();
-    var minutes = "0" + a.getMinutes();
+    let year  = a.getYear();
+    let month = a.getMonth();
+    let date  = a.getDate();
+    let hours = a.getHours();
+    let minutes = "0" + a.getMinutes();
 
     return date + '.' + month + '.' + year + ' - ' + hours + ':' + minutes.substr(-2);
 }
@@ -85,9 +85,9 @@ function processLinkToMistaCatalog(element, url) {
     if (url.search("catalog.mista.ru") === -1) return false;
 
     if (options["replace-catalog-to-is"].value === 'true') {
-        var text = $(element).text();
-        var newUrl   = url.replace(/catalog.mista/i, "infostart");
-        var newTrext = text.replace(/catalog.mista/i, "infostart");
+        let text = $(element).text();
+        let newUrl   = url.replace(/catalog.mista/i, "infostart");
+        let newTrext = text.replace(/catalog.mista/i, "infostart");
 
         $(element).attr("href", newUrl);
         $(element).text(newTrext);
@@ -98,9 +98,9 @@ function processLinkToMistaCatalog(element, url) {
 
 // ----------------Options-------------------------------------
 function readAllOptions(){
-    var keys = Object.keys(options);
-    for (var i in keys) {
-        var name = keys[i];
+    let keys = Object.keys(options);
+    for (let i in keys) {
+        let name = keys[i];
         options[name].value = readOption(name, options[name].default);
     }
 }
@@ -110,69 +110,68 @@ function saveOption(name, value) {
 }
 
 function readOption(name) {
-    var value = window.localStorage.getItem(name);
+    let value = window.localStorage.getItem(name);
     if (!value) value = options[name].default;
     return value;
 }
 
 function loadOptions(){
-    var keys = Object.keys(options);
-    for (var i in keys){
-        var name   = keys[i];
-        var option = options[name];
+    let keys = Object.keys(options);
+    for (let name of keys){
+        let option = options[name];
         if (option.type === 'checkbox'){
-            if (option.value === 'true') $('#' + name).prop("checked", "checked");
+            if (option.value === 'true') $(`#${name}`).prop("checked", "checked");
 
         } else if (option.type === 'radio'){
-            $('input:radio[name="' + name + '"][value="' +  option.value + '"]').prop("checked", "checked");
+            $(`input:radio[name="${name}"][value="${option.value}"]`).prop("checked", "checked");
 
         } else if (option.type === 'input'){
-            $('#' + name).val(option.value);
+            $(`#${name}`).val(option.value);
 
         } else if (option.type === 'color'){
-            $('#' + name).val(option.value.toUpperCase());
+            $(`#${name}`).val(option.value.toUpperCase());
         }
     }
 }
 
 function openMistaScriptOptions(){
-    var html =
-        '<div id="mista-script-overlay" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: #000; z-index:1000; opacity: 0.85"; pointer-events: none;></div>' +
-        '<div id="mista-script" style="position:fixed; left: 25%; top: 25%; background:#FFFFE1; border:1px solid #000000; width:630px; font-weight:normal; z-index: 1001">' +
-             '<span id="closeOptions" style="POSITION: absolute; RIGHT: 6px; TOP: 3px; cursor:hand; cursor:pointer">'+
-             '     <b> x </b>' +
-             '</span>' +
-             '<div style="cursor: move; background:white; padding:4px; border-bottom:1px solid silver">' +
-                 '<b>Настройки Mista.Script</b> version ' + mistaScriptVersion +
-             '</div>' +
-            '<div style="padding:5px">';
+    let html =
+       `<div id="mista-script-overlay" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: #000; z-index:1000; opacity: 0.85"; pointer-events: none;></div>
+        <div id="mista-script" style="position:fixed; left: 25%; top: 25%; background:#FFFFE1; border:1px solid #000000; width:630px; font-weight:normal; z-index: 1001">
+             <span id="closeOptions" style="POSITION: absolute; RIGHT: 6px; TOP: 3px; cursor:hand; cursor:pointer">
+                  <b> x </b>
+             </span>
+             <div style="cursor: move; background:white; padding:4px; border-bottom:1px solid silver">
+                 <b>Настройки Mista.Script</b> version ${mistaScriptVersion}
+             </div>
+             <div style="padding:5px">`;
 
-    for (var i in formOptions){
+    for (let row of formOptions){
         html += '<div style="margin-bottom:5px">';
 
-        var row = formOptions[i];
-        for (var j in row){
+        for (let name of row){
 
-            var name = row[j];
-            var option = options[name];
+            let option = options[name];
 
             if (option.type === 'checkbox') {
-                html += '<input id="' + name +'" type="checkbox" name="' + name +'" value="' + name +'">' +
-                    '<label for="' + name +'">' + option.label + '</label>';
+                html +=
+                    `<input id="${name}" type="checkbox" name="${name}">
+                    '<label for="${name}">${option.label}</label>`;
 
             } else if (option.type === 'input' || option.type === 'color') {
                 if (option.label){
-                    html += '<label for=' + name + '">' + option.label + '</label>';
+                    html += `<label for="${name}">${option.label}</label>`;
                 }
-                html += '<input id="' + name + '" name="' + name + '" style="margin-left:5px; width: ' + option.width + 'px"' + (option.type === 'color' ? ' type="color"': '') + '>';
+                let typeColor = (option.type === 'color' ? ' type="color"': '');
+                html += `<input id="${name}" name="${name}" style="margin-left:5px; width: ${option.width}px" ${typeColor}>`;
                 if (option.suffix){
                     html += ' ' + option.suffix;
                 }
             } else if (option.type === 'radio') {
-                html += '<label for="' + name +'">' + option.label + '</label><br>';
-                for (var k in option.values){
-                    var value = option.values[k];
-                    html += '<input type="radio" name="' + name +'" value="' + value.v + '"> ' + value.descr;
+                html += `<label for="${name}">${option.label}</label><br>`;
+                for (let value of option.values){
+                    //let value = option.values[k];
+                    html += `<input type="radio" name="${name}" value="${value.v}"> ${value.descr}`;
                 }
             }
         }
@@ -180,13 +179,13 @@ function openMistaScriptOptions(){
         html += '</div>';
     }
     html +=
-        '<div>После применения настроек страницу нужно перезагрузить</div>' +
-             '<div>' +
-                  '<button id="applyOptions" class="sendbutton" style="margin: 5px">OK</button>' +
-                  '<button id="cancelOptions" class="sendbutton" style="margin: 5px; float: left;">Отмена</button>' +
-                  '<button id="defaultOptions" class="sendbutton" style="margin: 5px; float: right;">Сбросить настройки</button>' +
-             '</div>' +
-        '</div>';
+       `<div>После применения настроек страницу нужно перезагрузить</div>
+             <div>
+                  <button id="applyOptions" class="sendbutton" style="margin: 5px">OK</button>
+                  <button id="cancelOptions" class="sendbutton" style="margin: 5px; float: left;">Отмена</button>
+                  <button id="defaultOptions" class="sendbutton" style="margin: 5px; float: right;">Сбросить настройки</button>
+             </div>
+        </div>`;
 
     $(html).appendTo('#body');
     $('#mista-script').draggable();
@@ -196,10 +195,9 @@ function openMistaScriptOptions(){
 
     $('#applyOptions').click(function(){
 
-        var keys = Object.keys(options);
-        for (var i in keys){
-            var name   = keys[i];
-            var option = options[name];
+        let keys = Object.keys(options);
+        for (let name of keys){
+            let option = options[name];
             if (option.type === 'checkbox'){
                 option.value = String($('#' + name).is(':checked'));
 
@@ -228,9 +226,9 @@ function openMistaScriptOptions(){
     });
 
     $('#defaultOptions').click(function(){
-        var keys = Object.keys(options);
-        for (var i in keys){
-            var name = keys[i];
+        let keys = Object.keys(options);
+        for (let i in keys){
+            let name = keys[i];
             options[name].value = options[name].default;
         }
         loadOptions();
@@ -240,21 +238,23 @@ function openMistaScriptOptions(){
 // ----------------Tooltips-------------------------------------
 function tooltipHtml(msgId) {
     //min-width: 500px; width:auto; max-width: 1200px
-    return '<div id=tooltip' + msgId+ ' msg-id=' + msgId + ' class="gensmall" style="position:absolute; background:#FFFFE1; border:1px solid #000000; width:650px; font-weight:normal;">'+
-        '<div id=tooltip-header' + msgId+ ' msg-id=' + msgId + '  style="cursor: move; background:white; padding:4px; border-bottom:1px solid silver"><span><b>Подождите...</b></span></div>' +
-        '<div id=tooltip-text' + msgId+ ' msg-id=' + msgId + '  style="padding:4px"><span>Идет ajax загрузка.<br/>Это может занять некоторое время.</span></div>' +
-        '<span id=tooltip-close' + msgId + ' msg-id=' + msgId + '  style="POSITION: absolute; RIGHT: 6px; TOP: 3px; cursor:hand; cursor:pointer">'+
-            '<b> x </b>' +
-        '</span>' +
-    '</div>';
+    let html =
+    `<div id="tooltip${msgId}" msg-id="${msgId}" class="gensmall" style="position:absolute; background:#FFFFE1; border:1px solid #000000; width:650px; font-weight:normal;">
+        <div id="tooltip-header${msgId}" msg-id="${msgId}" style="cursor: move; background:white; padding:4px; border-bottom:1px solid silver"><span><b>Подождите...</b></span></div>
+        <div id="tooltip-text${msgId}" msg-id="${msgId}" style="padding:4px"><span>Идет ajax загрузка.<br/>Это может занять некоторое время.</span></div>
+        <span id="tooltip-close${msgId}" msg-id="${msgId}" style="POSITION: absolute; RIGHT: 6px; TOP: 3px; cursor:hand; cursor:pointer">
+            <b> x </b>
+        </span>
+    </div>`;
+    return html;
 }
 
 function removeTooltip() {
     // remove all subsequent tooltips
-    var msgId = $(this).attr("msg-id");
-    var ind = tooltipsOrder.indexOf(msgId);
-    for (var i = ind; i < tooltipsOrder.length; i++) {
-        var tempMsgId = tooltipsOrder[i];
+    let msgId = $(this).attr("msg-id");
+    let ind = tooltipsOrder.indexOf(msgId);
+    for (let i = ind; i < tooltipsOrder.length; i++) {
+        let tempMsgId = tooltipsOrder[i];
         if (tooltipsMap[tempMsgId]) tooltipsMap[tempMsgId].remove();
         tooltipsMap[tempMsgId] = null;
     }
@@ -263,8 +263,8 @@ function removeTooltip() {
 
 function removeAllTooltips() {
     // remove all subsequent tooltips
-    for (var i = 0; i < tooltipsOrder.length; i++) {
-        var tempMsgId = tooltipsOrder[i];
+    for (let i = 0; i < tooltipsOrder.length; i++) {
+        let tempMsgId = tooltipsOrder[i];
         if (tooltipsMap[tempMsgId]) tooltipsMap[tempMsgId].remove();
         tooltipsMap[tempMsgId] = null;
     }
@@ -272,11 +272,11 @@ function removeAllTooltips() {
 }
 
 function setMsgText(topicId, msgId, elemHeader, elemText){
-    var user;
+    let user;
     if (topicId === currentTopicId) user = $('#tduser' + msgId).html();
     if (user) {
         elemHeader.html(user);
-        var text = $('#' + msgId).html();
+        let text = $('#' + msgId).html();
         if (!text) {
             // hidden message
             try {
@@ -294,7 +294,7 @@ function setMsgText(topicId, msgId, elemHeader, elemText){
 
 function setMsgTextAjax(topicId, msgId, elemHeader, elemText){
 
-    var apiUrl = "ajax_topic.php?id=" + topicId + "&from=" + msgId + "&to=" + (parseInt(msgId) + 1);
+    let apiUrl = `ajax_topic.php?id=${topicId}&from=${msgId}&to=${(+msgId + 1)}`;
 
     $.ajax({
         url: apiUrl
@@ -304,12 +304,13 @@ function setMsgTextAjax(topicId, msgId, elemHeader, elemText){
             elemText.text('Сообщение не найдено');
             return;
         }
-        var msgArr = dataObj.filter(function(a){ return a.n === msgId; });
+        let msgArr = dataObj.filter(function(a){ return a.n === msgId; });
         if (msgArr.length === 1) {
-            var msg = msgArr[0];
-            var text = msg.text.replace(/\(([0-9]+)\)/g, "<a href='#$1'>($1)</a>");
-            var user = "<b>" + msg.user + "</b><br>"+
-                "<span class='message-info'>" + msg.n + " - " + utimeToDate(msg.utime) + "</span>";
+            let msg = msgArr[0];
+            let text = msg.text.replace(/\(([0-9]+)\)/g, "<a href='#$1'>($1)</a>");
+            let user =
+                `<b>${msg.user}</b><br>
+                 <span class='message-info'>${msg.n}  - ${utimeToDate(msg.utime)}</span>`;
             elemText.html(text);
             if (elemHeader) elemHeader.html(user);
             run(elemHeader, elemText);
@@ -331,13 +332,13 @@ function loadDataMsg(topicId, msgId){
 function createTooltip(link, msgId) {
     if ($('#tooltip' + msgId).length > 0) return;
     $(tooltipHtml(msgId)).appendTo('#body');
-    var loc = $(link).offset();
-    var left = loc.left;
+    let loc = $(link).offset();
+    let left = loc.left;
     if ($(window).width() - loc.left < 100) {
         left = left - 630;
     }
 
-    var elem = $("#tooltip" + msgId)
+    let elem = $("#tooltip" + msgId)
         .draggable()
         .css({
             "top": loc.top + "px",
@@ -354,7 +355,7 @@ function createTooltip(link, msgId) {
 
 function attachTooltip(link, id, loadDataFunc) {
 
-    var timer;
+    let timer;
     $(link).hover(function(){
         timer = setTimeout(function() {
             createTooltip(link, id);
@@ -368,7 +369,7 @@ function attachTooltip(link, id, loadDataFunc) {
 }
 
 function processLinkToPost(element, url, onlyBindEvents) {
-    var topicId, msgId;
+    let topicId, msgId;
     try {
         topicId = url.match(/topic.php\?id=([0-9]+)($|\&)/)[1];
     } catch(e) {}
@@ -414,7 +415,7 @@ function loadDataImg(url, id, header){
 
 function getImgUrl(url) {
     if (url.search("ximage.ru/index.php") !== -1) {
-        var imgId = url.match(/id=(.+)$/)[1];
+        let imgId = url.match(/id=(.+)$/)[1];
         return "http://ximage.ru/data/imgs/" + imgId + ".jpg";
 
     } else if (url.search(/.+\.(jpg|jpeg|png)$/) !== -1) {
@@ -424,19 +425,19 @@ function getImgUrl(url) {
 
 function processLinkToImage(element, url, onlyBindEvents) {
 
-    var imgUrl = getImgUrl(url);
+    let imgUrl = getImgUrl(url);
     if (!imgUrl) return false;
     if ($(element).text() === '') return true;
 
     if (options['show-imgs'].value === 'showAlways'){
         if (!onlyBindEvents) {
             $(element).text("");
-            var html = '';
-            var prev = $(element).prev();
+            let html = '';
+            let prev = $(element).prev();
             if (prev.length === 0) {
                 html = '<br>';
             }
-            html += '<img src="' + imgUrl + '" style="max-width: ' + options['max-img-width'].value + 'px; height:auto;"/>';
+            html += `<img src="${imgUrl}" style="max-width: ${options['max-img-width'].value}px; height:auto;"/>`;
             $(html).appendTo($(element));
         }
 
@@ -453,14 +454,14 @@ function setYoutubeTitle(link, videoId, onlyBindEvents) {
 
     if (onlyBindEvents) return;
 
-    var apiUrl = 'https://www.googleapis.com/youtube/v3/videos?key=AIzaSyBPtVWaQ7iGkObgyavKoNVQdfPwczAdQUE&&fields=items(snippet(title))&part=snippet&id=' + videoId;
+    let apiUrl = `https://www.googleapis.com/youtube/v3/videos?key=AIzaSyBPtVWaQ7iGkObgyavKoNVQdfPwczAdQUE&&fields=items(snippet(title))&part=snippet&id=${videoId}`;
 
     $.ajax({
         url: apiUrl
     }).done(function(data){
         try {
-            var fullTitle = data.items[0].snippet.title;
-            var title = fullTitle;
+            let fullTitle = data.items[0].snippet.title;
+            let title = fullTitle;
             if (fullTitle.length > options['max-youtube-title'].value) title = title.substring(0, options['max-youtube-title'].value) + '...';
             $(link).text(options['youtube-prefix'].value + ': ' + title);
             $(link).attr('title', fullTitle);
@@ -473,7 +474,7 @@ function setYoutubeTitle(link, videoId, onlyBindEvents) {
 
 function processLinkToYoutube(element, url, onlyBindEvents) {
 
-    var videoId;
+    let videoId;
     // youtube.com/watch?v=videoId
     if (url.search(/youtube/) !== -1) {
         if (options['show-youtube-title'].value === 'true'){
@@ -503,28 +504,28 @@ function processLinkToYoutube(element, url, onlyBindEvents) {
 function processLinkToUser(element, url, userPostMap, onlyBindEvents) {
 
     if (options['show-userpics'].value === 'no') return;
-    var userId = $(element).attr('data-user_id');
+    let userId = $(element).attr('data-user_id');
     if (!userId) return;
 
-    var userName = $(element).text();
-    var imgUrl;
+    let userName = $(element).text();
+    let imgUrl;
     if (options['show-userpics'].value === 'showThumbs') {
-        imgUrl = "/users_photo/thumb/" + userId + ".jpg";
+        imgUrl = `/users_photo/thumb/${userId}.jpg`;
     } else {
-        imgUrl = "/users_photo/mid/" + userId + ".jpg";
+        imgUrl = `/users_photo/mid/${userId}.jpg`;
     }
 
     if (options['show-userpics'].value === 'onMouseOver') {
-        var user = $(element).text();
+        let user = $(element).text();
         attachTooltip(element, '_p', loadDataImg(imgUrl, '_p', user));
 
     } else {
         if (!onlyBindEvents) {
 
-            var msgId = +$(element).parent().attr('id').replace('tduser', '');
+            let msgId = +$(element).parent().attr('id').replace('tduser', '');
             if (userPostMap[msgId - 1] !== userId) {
 
-                var img = $('<img src="' + imgUrl + '" style="max-width: ' + options['max-userpic-width'].value + 'px; height: auto"><br>').insertBefore($(element));
+                let img = $(`<img src="${imgUrl}" style="max-width: ${options['max-userpic-width'].value}px; height: auto"><br>`).insertBefore($(element));
                 img.on('load', function(){
                     // Delete empty image to remove empty space
                     if ($(this).height() === 1) {
@@ -537,11 +538,11 @@ function processLinkToUser(element, url, userPostMap, onlyBindEvents) {
     }
 
     if (options['add-name-to-message'].value === 'true') {
-        var span;
+        let span;
         if (!onlyBindEvents) {
-            span = $('<span id="addUserToMessage' + userId + '" class="agh" style="cursor: pointer"> &#9654;</span>').insertAfter($(element));
+            span = $(`<span id="addUserToMessage${userId}" class="agh" style="cursor: pointer"> &#9654;</span>`).insertAfter($(element));
         } else {
-            span = $('#addUserToMessage' + userId);
+            span = $(`#addUserToMessage${userId}`);
         }
 
         if (span) {
@@ -555,8 +556,8 @@ function processLinkToUser(element, url, userPostMap, onlyBindEvents) {
 
 function addUserToMessage(userId, userName) {
     $('#message_text').val(function(i, text) {
-        var space = '';
-        var lastLetter = text.slice(-1);
+        let space = '';
+        let lastLetter = text.slice(-1);
         if (lastLetter !== ' ' && lastLetter !== '\n' && text.length > 0) space = ' ';
         return text + space + '@{' + userName + '}';
     });
@@ -589,10 +590,10 @@ function run(parentElemHeader, parentElemText, onlyBindEvents){
     parentElemText   = parentElemText   || $('td[id^=tdmsg]');
 
     // Process all links in the user name area
-    var userPostMap = {};
+    let userPostMap = {};
     parentElemHeader.find('a').each(function(a){
 
-        var url = $(this).attr('href');
+        let url = $(this).attr('href');
         processLinkToUser(this, url, userPostMap, onlyBindEvents);
         if (processLinkToAuthor(this, url, onlyBindEvents)) return;
         if (processLinkToYourself(this, url, onlyBindEvents)) return;
@@ -602,7 +603,7 @@ function run(parentElemHeader, parentElemText, onlyBindEvents){
     // Process all links in the message area
     parentElemText.find('a').each(function(a){
 
-        var url = $(this).attr('href');
+        let url = $(this).attr('href');
         if (processLinkToImage(this, url, onlyBindEvents)) return;
         if (processLinkToYoutube(this, url, onlyBindEvents)) return;
         if (processLinkToMistaCatalog(this, url, onlyBindEvents)) return;
@@ -653,7 +654,7 @@ function addUserAutocomplete(){
             $.ajax({
                 url: 'http://forum-mista.pro/api/users.php?name=' + encodeURI(term)
             }).done(function(data){
-                var dataObj = JSON.parse(data).slice(0, 20).map((a) => a.name);
+                let dataObj = JSON.parse(data).slice(0, 20).map((a) => a.name);
                 callback(dataObj);
             }).fail(function () {
                 callback([]); // Callback must be invoked even if something went wrong.
@@ -674,7 +675,7 @@ function addUserAutocomplete(){
 
 (function() {
 
-    var currentUrl = window.location.href;
+    let currentUrl = window.location.href;
     try {
         currentTopicId = currentUrl.match(/id=([0-9]+)/)[1];
     } catch(e){}
@@ -694,8 +695,8 @@ function addUserAutocomplete(){
 
     $('#table_messages').on('mista.load', 'tr', function(event){
         //<tr id=message_id>
-        var elemHeader = $(this).find('td[id^=tduser]');
-        var elemText = $(this).find('td[id^=tdmsg]');
+        let elemHeader = $(this).find('td[id^=tduser]');
+        let elemText = $(this).find('td[id^=tdmsg]');
         run(elemHeader, elemText);
     });
 
