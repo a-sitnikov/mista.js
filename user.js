@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         mista.ru
 // @namespace    http://tampermonkey.net/
-// @version      1.1.0
+// @version      1.1.1
 // @description  Make mista great again!
 // @author       acsent
 // @match        *.mista.ru/*
@@ -13,7 +13,7 @@
 // @updateURL    https://cdn.jsdelivr.net/gh/a-sitnikov/mista.js@latest/user.js
 // ==/UserScript==
 
-var mistaScriptVersion = '1.1.0';
+var mistaScriptVersion = '1.1.1';
 var tooltipsOrder = [];
 var tooltipsMap = {};
 var currentTopicId = 0;
@@ -486,12 +486,12 @@ function processLinkToYoutube(element, url, onlyBindEvents) {
     }
 
     // youtu.be/videoId
-    if (url.search(/youtu.be/) !== -1) {
+    if (url.search(/youtu\.be/) !== -1) {
         if (options['show-youtube-title'].value === 'true'){
             try{
                 videoId = url.match(/e\/(.+)(\&|$)/)[1];
             } catch(e){}
-            if (videoId) setYoutubeTitle(link, videoId, onlyBindEvents);
+            if (videoId) setYoutubeTitle(element, videoId, onlyBindEvents);
         }
         return true;
     }
