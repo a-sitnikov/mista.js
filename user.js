@@ -713,6 +713,7 @@ function addUserAutocomplete(){
         });
 
     } else {
+        addUserAutocomplete();
         run();
     }
 })();
