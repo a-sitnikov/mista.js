@@ -1,18 +1,19 @@
 ﻿// ==UserScript==
 // @name         mista.ru
 // @namespace    http://tampermonkey.net/
-// @version      1.0.3
+// @version      1.1.0
 // @description  Make mista great again!
-// @author       You
+// @author       acsent
 // @match        *.mista.ru/*
 // @grant        none
 // @require      http://forum.mista.ru/js/jquery-1.9.1.min.js
 // @require      https://code.jquery.com/ui/1.12.1/jquery-ui.min.js
+// @require      https://cdn.jsdelivr.net/gh/yuku-t/jquery-textcomplete@latest/dist/jquery.textcomplete.min.js
 // @downloadURL  https://cdn.jsdelivr.net/gh/a-sitnikov/mista.js@latest/user.js
 // @updateURL    https://cdn.jsdelivr.net/gh/a-sitnikov/mista.js@latest/user.js
 // ==/UserScript==
 
-var mistaScriptVersion = '1.0.3';
+var mistaScriptVersion = '1.1.0';
 var tooltipsOrder = [];
 var tooltipsMap = {};
 var currentTopicId = 0;
@@ -37,7 +38,8 @@ var options = {
     "max-youtube-title":     {default: "40",          type: "input",    label: "", suffix: "символов", width: "50"},
     "youtube-prefix":        {default: "youtube",     type: "input",    label: "Префикс youtube", suffix: "", width: "100"},
     "first-post-tooltip":    {default: "true",        type: "checkbox", label: "Отображать тултип нулевого поста ссыки на другую ветку"},
-    "add-name-to-message":   {default: "true",        type: "checkbox", label: "Кнопка для ввода имени в сообщение"}
+    "add-name-to-message":   {default: "true",        type: "checkbox", label: "Кнопка для ввода имени в сообщение"},
+    "user-autocomplete":     {default: "true",        type: "checkbox", label: "Дополнение имен пользователей. При написании @"}
 };
 
 var formOptions = [
@@ -52,7 +54,8 @@ var formOptions = [
     ['max-img-width'],
     ['show-youtube-title', 'max-youtube-title'],
     ['youtube-prefix'],
-    ['add-name-to-message']
+    ['add-name-to-message'],
+    ['user-autocomplete']
 ];
 
 function utimeToDate(utime) {
@@ -136,13 +139,13 @@ function openMistaScriptOptions(){
     var html =
         '<div id="mista-script-overlay" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: #000; z-index:1000; opacity: 0.85"; pointer-events: none;></div>' +
         '<div id="mista-script" style="position:fixed; left: 25%; top: 25%; background:#FFFFE1; border:1px solid #000000; width:630px; font-weight:normal; z-index: 1001">' +
-        '<span id="closeOptions" style="POSITION: absolute; RIGHT: 6px; TOP: 3px; cursor:hand; cursor:pointer">'+
-        '     <b> x </b>' +
-        '</span>' +
-        '<div style="cursor: move; background:white; padding:4px; border-bottom:1px solid silver">' +
-        '<b>Настройки Mista.Script</b> version ' + mistaScriptVersion +
-        '</div>' +
-        '<div style="padding:5px">';
+             '<span id="closeOptions" style="POSITION: absolute; RIGHT: 6px; TOP: 3px; cursor:hand; cursor:pointer">'+
+             '     <b> x </b>' +
+             '</span>' +
+             '<div style="cursor: move; background:white; padding:4px; border-bottom:1px solid silver">' +
+                 '<b>Настройки Mista.Script</b> version ' + mistaScriptVersion +
+             '</div>' +
+            '<div style="padding:5px">';
 
     for (var i in formOptions){
         html += '<div style="margin-bottom:5px">';
@@ -178,11 +181,11 @@ function openMistaScriptOptions(){
     }
     html +=
         '<div>После применения настроек страницу нужно перезагрузить</div>' +
-        '<div>' +
-        '<button id="applyOptions" class="sendbutton" style="margin: 5px">OK</button>' +
-        '<button id="cancelOptions" class="sendbutton" style="margin: 5px; float: left;">Отмена</button>' +
-        '<button id="defaultOptions" class="sendbutton" style="margin: 5px; float: right;">Сбросить настройки</button>' +
-        '</div>' +
+             '<div>' +
+                  '<button id="applyOptions" class="sendbutton" style="margin: 5px">OK</button>' +
+                  '<button id="cancelOptions" class="sendbutton" style="margin: 5px; float: left;">Отмена</button>' +
+                  '<button id="defaultOptions" class="sendbutton" style="margin: 5px; float: right;">Сбросить настройки</button>' +
+             '</div>' +
         '</div>';
 
     $(html).appendTo('#body');
@@ -241,9 +244,9 @@ function tooltipHtml(msgId) {
         '<div id=tooltip-header' + msgId+ ' msg-id=' + msgId + '  style="cursor: move; background:white; padding:4px; border-bottom:1px solid silver"><span><b>Подождите...</b></span></div>' +
         '<div id=tooltip-text' + msgId+ ' msg-id=' + msgId + '  style="padding:4px"><span>Идет ajax загрузка.<br/>Это может занять некоторое время.</span></div>' +
         '<span id=tooltip-close' + msgId + ' msg-id=' + msgId + '  style="POSITION: absolute; RIGHT: 6px; TOP: 3px; cursor:hand; cursor:pointer">'+
-        '<b> x </b>' +
+            '<b> x </b>' +
         '</span>' +
-        '</div>';
+    '</div>';
 }
 
 function removeTooltip() {
@@ -335,13 +338,13 @@ function createTooltip(link, msgId) {
     }
 
     var elem = $("#tooltip" + msgId)
-    .draggable()
-    .css({
-        "top": loc.top + "px",
-        "left": left + "px"
-        //"z-index": "999"
-    })
-    .click(removeTooltip);
+        .draggable()
+        .css({
+            "top": loc.top + "px",
+            "left": left + "px"
+            //"z-index": "999"
+         })
+        .click(removeTooltip);
 
     tooltipsMap[msgId] = elem;
     tooltipsOrder.push(msgId);
@@ -358,7 +361,7 @@ function attachTooltip(link, id, loadDataFunc) {
             loadDataFunc();
         }, +options['tooltip-delay'].value);
     },
-                  function() {
+    function() {
         // on mouse out, cancel the timer
         clearTimeout(timer);
     });
@@ -609,6 +612,66 @@ function run(parentElemHeader, parentElemText, onlyBindEvents){
 
 }
 
+function addUserAutocomplete(){
+
+    if (options['user-autocomplete'].value !== 'true') return;
+
+    $("<style>")
+    .prop("type", "text/css")
+    .html(`.dropdown-menu {
+        background: white;
+        list-style-type:none;
+        overflow-y: auto;
+        max-height: 200px;
+        border: 1px solid #CECECE;
+    }
+    .dropdown-menu .textcomplete-item a,
+    .dropdown-menu .textcomplete-item a:hover {
+        cursor: pointer;
+        font-weight: normal;
+        color: #000;
+        position: relative;
+        padding: 3px 10px;
+        display: block;
+        border-bottom: 1px solid #CECECE;
+     }
+    .dropdown-menu .textcomplete-item.active a {
+        background: lightgrey;
+    }
+    /* Highlighting of the matching part
+    of each search result */
+    .dropdown-menu .textcomplete-item a em {
+        font-style: normal;
+        font-weight: bold;
+    }`)
+    .appendTo("head");
+
+    $('textarea').textcomplete([{
+        match: /(^|\s)@([a-zA-Zа-яА-Я0-9_]{2,})$/,
+        search: function (term, callback) {
+            if (!term) return;
+            $.ajax({
+                url: 'http://forum-mista.pro/api/users.php?name=' + encodeURI(term)
+            }).done(function(data){
+                var dataObj = JSON.parse(data).slice(0, 20).map((a) => a.name);
+                callback(dataObj);
+            }).fail(function () {
+                callback([]); // Callback must be invoked even if something went wrong.
+            });
+        },
+        replace: function (word) {
+            return ' @{' + word + '} ';
+        },
+        template: function(value, term) {
+            return value;
+        }
+    }], {
+        appendTo: 'body',
+        dropdownClassName: 'dropdown-menu',
+        maxCount: 20
+    });
+}
+
 (function() {
 
     var currentUrl = window.location.href;
@@ -637,9 +700,18 @@ function run(parentElemHeader, parentElemText, onlyBindEvents){
     });
 
     if (typeof $.ui == 'undefined') {
-        $.getScript('https://code.jquery.com/ui/1.12.1/jquery-ui.min.js', function(){
+
+        $.when(
+            $.getScript('https://code.jquery.com/ui/1.12.1/jquery-ui.min.js'),
+            $.getScript('https://cdn.jsdelivr.net/gh/yuku-t/jquery-textcomplete@latest/dist/jquery.textcomplete.min.js'),
+            $.Deferred(function( deferred ){
+                $( deferred.resolve );
+            })
+        ).done(function(){
+            addUserAutocomplete();
             run();
         });
+
     } else {
         run();
     }
