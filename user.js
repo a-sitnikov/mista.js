@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         mista.ru
 // @namespace    http://tampermonkey.net/
-// @version      1.0.2
+// @version      1.0.3
 // @description  Make mista great again!
 // @author       You
 // @match        *.mista.ru/*
@@ -12,7 +12,7 @@
 // @updateURL    https://cdn.jsdelivr.net/gh/a-sitnikov/mista.js@latest/user.js
 // ==/UserScript==
 
-var mistaScriptVersion = '1.0.2';
+var mistaScriptVersion = '1.0.3';
 var tooltipsOrder = [];
 var tooltipsMap = {};
 var currentTopicId = 0;
@@ -365,7 +365,7 @@ function attachTooltip(link, id, loadDataFunc) {
 function processLinkToPost(element, url, onlyBindEvents) {
     var topicId, msgId;
     try {
-        topicId = url.match(/id=([0-9]+)($|\&)/)[1];
+        topicId = url.match(/topic.php\?id=([0-9]+)($|\&)/)[1];
     } catch(e) {}
     try {
         msgId = url.match(/#([0-9]+)/)[1];
@@ -554,8 +554,8 @@ function processLinkToYourself(element, url, onlyBindEvents) {
 // ----------------Run-----------------------------------------
 function run(parentElemHeader, parentElemText, onlyBindEvents){
 
-    if (!parentElemHeader) parentElemHeader = $('td[id^=tduser]');
-    if (!parentElemText) parentElemText = $('td[id^=tdmsg]');
+    parentElemHeader = parentElemHeader || $('td[id^=tduser]');
+    parentElemText   = parentElemText   || $('td[id^=tdmsg]');
 
     // Process all links in the user name area
     var userPostMap = {};
