@@ -36,7 +36,8 @@ var options = {
     "show-youtube-title":    {default: "true",        type: "checkbox", label: "Показывать наименования роликов youtube, макс. длина"},
     "max-youtube-title":     {default: "40",          type: "input",    label: "", suffix: "символов", width: "50"},
     "youtube-prefix":        {default: "youtube",     type: "input",    label: "Префикс youtube", suffix: "", width: "100"},
-    "first-post-tooltip":    {default: "true",        type: "checkbox", label: "Отображать тултип нулевого поста ссыки на другую ветку"}
+    "first-post-tooltip":    {default: "true",        type: "checkbox", label: "Отображать тултип нулевого поста ссыки на другую ветку"},
+    "add-name-to-message":   {default: "true",        type: "checkbox", label: "Кнопка для ввода имени в сообщение"}
 };
 
 var formOptions = [
@@ -50,7 +51,8 @@ var formOptions = [
     ['show-imgs'],
     ['max-img-width'],
     ['show-youtube-title', 'max-youtube-title'],
-    ['youtube-prefix']
+    ['youtube-prefix'],
+    ['add-name-to-message']
 ];
 
 function utimeToDate(utime) {
@@ -134,13 +136,13 @@ function openMistaScriptOptions(){
     var html =
         '<div id="mista-script-overlay" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: #000; z-index:1000; opacity: 0.85"; pointer-events: none;></div>' +
         '<div id="mista-script" style="position:fixed; left: 25%; top: 25%; background:#FFFFE1; border:1px solid #000000; width:630px; font-weight:normal; z-index: 1001">' +
-             '<span id="closeOptions" style="POSITION: absolute; RIGHT: 6px; TOP: 3px; cursor:hand; cursor:pointer">'+
-             '     <b> x </b>' +
-             '</span>' +
-             '<div style="cursor: move; background:white; padding:4px; border-bottom:1px solid silver">' +
-                 '<b>Настройки Mista.Script</b> version ' + mistaScriptVersion +
-             '</div>' +
-            '<div style="padding:5px">';
+        '<span id="closeOptions" style="POSITION: absolute; RIGHT: 6px; TOP: 3px; cursor:hand; cursor:pointer">'+
+        '     <b> x </b>' +
+        '</span>' +
+        '<div style="cursor: move; background:white; padding:4px; border-bottom:1px solid silver">' +
+        '<b>Настройки Mista.Script</b> version ' + mistaScriptVersion +
+        '</div>' +
+        '<div style="padding:5px">';
 
     for (var i in formOptions){
         html += '<div style="margin-bottom:5px">';
@@ -176,11 +178,11 @@ function openMistaScriptOptions(){
     }
     html +=
         '<div>После применения настроек страницу нужно перезагрузить</div>' +
-             '<div>' +
-                  '<button id="applyOptions" class="sendbutton" style="margin: 5px">OK</button>' +
-                  '<button id="cancelOptions" class="sendbutton" style="margin: 5px; float: left;">Отмена</button>' +
-                  '<button id="defaultOptions" class="sendbutton" style="margin: 5px; float: right;">Сбросить настройки</button>' +
-             '</div>' +
+        '<div>' +
+        '<button id="applyOptions" class="sendbutton" style="margin: 5px">OK</button>' +
+        '<button id="cancelOptions" class="sendbutton" style="margin: 5px; float: left;">Отмена</button>' +
+        '<button id="defaultOptions" class="sendbutton" style="margin: 5px; float: right;">Сбросить настройки</button>' +
+        '</div>' +
         '</div>';
 
     $(html).appendTo('#body');
@@ -239,9 +241,9 @@ function tooltipHtml(msgId) {
         '<div id=tooltip-header' + msgId+ ' msg-id=' + msgId + '  style="cursor: move; background:white; padding:4px; border-bottom:1px solid silver"><span><b>Подождите...</b></span></div>' +
         '<div id=tooltip-text' + msgId+ ' msg-id=' + msgId + '  style="padding:4px"><span>Идет ajax загрузка.<br/>Это может занять некоторое время.</span></div>' +
         '<span id=tooltip-close' + msgId + ' msg-id=' + msgId + '  style="POSITION: absolute; RIGHT: 6px; TOP: 3px; cursor:hand; cursor:pointer">'+
-            '<b> x </b>' +
+        '<b> x </b>' +
         '</span>' +
-    '</div>';
+        '</div>';
 }
 
 function removeTooltip() {
@@ -333,13 +335,13 @@ function createTooltip(link, msgId) {
     }
 
     var elem = $("#tooltip" + msgId)
-        .draggable()
-        .css({
-            "top": loc.top + "px",
-            "left": left + "px"
-            //"z-index": "999"
-         })
-        .click(removeTooltip);
+    .draggable()
+    .css({
+        "top": loc.top + "px",
+        "left": left + "px"
+        //"z-index": "999"
+    })
+    .click(removeTooltip);
 
     tooltipsMap[msgId] = elem;
     tooltipsOrder.push(msgId);
@@ -356,7 +358,7 @@ function attachTooltip(link, id, loadDataFunc) {
             loadDataFunc();
         }, +options['tooltip-delay'].value);
     },
-    function() {
+                  function() {
         // on mouse out, cancel the timer
         clearTimeout(timer);
     });
@@ -495,12 +497,13 @@ function processLinkToYoutube(element, url, onlyBindEvents) {
 }
 
 // ----------------Users---------------------------------------
-function processUserpic(element, url, userPostMap, onlyBindEvents) {
+function processLinkToUser(element, url, userPostMap, onlyBindEvents) {
 
     if (options['show-userpics'].value === 'no') return;
     var userId = $(element).attr('data-user_id');
     if (!userId) return;
 
+    var userName = $(element).text();
     var imgUrl;
     if (options['show-userpics'].value === 'showThumbs') {
         imgUrl = "/users_photo/thumb/" + userId + ".jpg";
@@ -528,7 +531,32 @@ function processUserpic(element, url, userPostMap, onlyBindEvents) {
             }
             userPostMap[msgId] = userId;
         }
-     }
+    }
+
+    if (options['add-name-to-message'].value === 'true') {
+        var span;
+        if (!onlyBindEvents) {
+            span = $('<span id="addUserToMessage' + userId + '" class="agh" style="cursor: pointer"> &#9654;</span>').insertAfter($(element));
+        } else {
+            span = $('#addUserToMessage' + userId);
+        }
+
+        if (span) {
+            span.click(function(){
+                addUserToMessage(userId, userName);
+            });
+        }
+    }
+
+}
+
+function addUserToMessage(userId, userName) {
+    $('#message_text').val(function(i, text) {
+        var space = '';
+        var lastLetter = text.slice(-1);
+        if (lastLetter !== ' ' && lastLetter !== '\n' && text.length > 0) space = ' ';
+        return text + space + '@{' + userName + '}';
+    });
 }
 
 function processLinkToAuthor(element, url, onlyBindEvents) {
@@ -562,7 +590,7 @@ function run(parentElemHeader, parentElemText, onlyBindEvents){
     parentElemHeader.find('a').each(function(a){
 
         var url = $(this).attr('href');
-        processUserpic(this, url, userPostMap, onlyBindEvents);
+        processLinkToUser(this, url, userPostMap, onlyBindEvents);
         if (processLinkToAuthor(this, url, onlyBindEvents)) return;
         if (processLinkToYourself(this, url, onlyBindEvents)) return;
 
