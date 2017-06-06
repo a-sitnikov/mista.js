@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         mista.ru
 // @namespace    http://tampermonkey.net/
-// @version      1.1.3
+// @version      1.1.4
 // @description  Make mista great again!
 // @author       acsent
 // @match        *.mista.ru/*
@@ -13,7 +13,7 @@
 // @updateURL    https://cdn.jsdelivr.net/gh/a-sitnikov/mista.js@latest/user.js
 // ==/UserScript==
 
-const mistaScriptVersion = '1.1.3';
+const mistaScriptVersion = '1.1.4';
 let tooltipsOrder = [];
 let tooltipsMap = {};
 let currentTopicId = 0;
@@ -39,6 +39,7 @@ let options = {
     "youtube-prefix":        {default: "youtube",     type: "input",    label: "Префикс youtube", suffix: "", width: "100"},
     "first-post-tooltip":    {default: "true",        type: "checkbox", label: "Отображать тултип нулевого поста ссыки на другую ветку"},
     "add-name-to-message":   {default: "true",        type: "checkbox", label: "Кнопка для ввода имени в сообщение"},
+    "add-name-style":        {default: "{font-size: 100%}", type: "input",    label: "Стиль кнопки", width: "350", suffix: "любые свойства css"},
     "user-autocomplete":     {default: "true",        type: "checkbox", label: "Дополнение имен пользователей. При написании @"}
 };
 
@@ -55,6 +56,7 @@ let formOptions = [
     ['show-youtube-title', 'max-youtube-title'],
     ['youtube-prefix'],
     ['add-name-to-message'],
+    ['add-name-style'],
     ['user-autocomplete']
 ];
 
@@ -273,10 +275,10 @@ function removeAllTooltips() {
 
 function setMsgText(topicId, msgId, elemHeader, elemText){
     let user;
-    if (topicId === currentTopicId) user = $('#tduser' + msgId).html();
+    if (topicId === currentTopicId) user = $(`#tduser${msgId}`).html();
     if (user) {
         elemHeader.html(user);
-        let text = $('#' + msgId).html();
+        let text = $(`#${msgId}`).html();
         if (!text) {
             // hidden message
             try {
@@ -330,7 +332,7 @@ function loadDataMsg(topicId, msgId){
 }
 
 function createTooltip(link, msgId) {
-    if ($('#tooltip' + msgId).length > 0) return;
+    if ($(`#tooltip${msgId}`).length > 0) return;
     $(tooltipHtml(msgId)).appendTo('#body');
     let loc = $(link).offset();
     let left = loc.left;
@@ -398,16 +400,16 @@ function processLinkToPost(element, url, onlyBindEvents) {
 // ----------------Images--------------------------------------
 function loadDataImg(url, id, header){
 
-    if (!header) header = 'Картинка';
+    header = header || 'Картинка';
 
     return function(){
-        $('#tooltip-header' + id).html('<b>' + header + '</b>');
-        $('#tooltip-text' + id).html('<img src="' + url + '" style="max-width: ' + options['max-img-width'].value + 'px; height:auto;">');
-        $('#tooltip-text' + id + ' img').on('load', function(){
+        $(`#tooltip-header${id}`).html(`<b>${header}</b>`);
+        $(`#tooltip-text${id}`).html(`<img src="${url}" style="max-width: ${options['max-img-width'].value}px; height:auto;">`);
+        $(`#tooltip-text${id} img`).on('load', function(){
             if ($(this).height() === 1) {
-                $('#tooltip-text' + id).text('Картинка отсутствует');
+                $(`#tooltip-text${id}`).text('Картинка отсутствует');
             } else {
-                $('#tooltip' + id).width($(this).width() + 8);
+                $(`#tooltip${id}`).width($(this).width() + 8);
             }
         });
     };
@@ -420,6 +422,8 @@ function getImgUrl(url) {
 
     } else if (url.search(/.+\.(jpg|jpeg|png)$/) !== -1) {
         return url;
+    } else if (url.search(/yadi\.sk/) !== -1) {
+        return "";
     }
 }
 
@@ -541,6 +545,7 @@ function processLinkToUser(element, url, userPostMap, onlyBindEvents) {
         let span;
         if (!onlyBindEvents) {
             span = $(`<span id="addUserToMessage${userId}" class="agh" style="cursor: pointer"> &#9654;</span>`).insertAfter($(element));
+            span.css(JSON.parse(options['add-name-style'].value));
         } else {
             span = $(`#addUserToMessage${userId}`);
         }
@@ -661,7 +666,10 @@ function addUserAutocomplete(){
             });
         },
         replace: function (word) {
-            return ' @{' + word + '} ';
+            if (word.search(' ') === -1)
+                return ' @' + word;
+            else
+                return ' @{' + word + '} ';
         },
         template: function(value, term) {
             return value;
