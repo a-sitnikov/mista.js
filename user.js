@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         mista.ru
 // @namespace    http://tampermonkey.net/
-// @version      1.1.4
+// @version      1.1.5
 // @description  Make mista great again!
 // @author       acsent
 // @match        *.mista.ru/*
@@ -13,35 +13,35 @@
 // @updateURL    https://cdn.jsdelivr.net/gh/a-sitnikov/mista.js@latest/user.js
 // ==/UserScript==
 
-const mistaScriptVersion = '1.1.4';
+const mistaScriptVersion = '1.1.5';
 let tooltipsOrder = [];
 let tooltipsMap = {};
 let currentTopicId = 0;
 let yourUrl;
 let topicAuthor;
 
-let options = {
-    "show-tooltips":         {default: "true",        type: "checkbox", label: "Показывать тултипы, задержка"},
-    "tooltip-delay":         {default: "500",         type: "input",    label: "", suffix: "мс", width: "50"},
-    "replace-catalog-to-is": {default: "true",        type: "checkbox", label: "Обратно заменять catalog.mista.ru на infostart.ru"},
-    "mark-author":           {default: "true",        type: "checkbox", label: "Подсвечивать автора цветом"},
-    "author-color":          {default: "#ffd784",     type: "color",    label: "", width: "100"},
-    "mark-yourself":         {default: "true",        type: "checkbox", label: "Подсвечивать себя цветом"},
-    "yourself-color":        {default: "#9bc5ef",     type: "color",    label: "", width: "100"},
-    "show-userpics":         {default: "onMouseOver", type: "radio",    label: "Показывать фото пользователей",
-                              values:[{v: "showAlways", descr: "Показывать всегда"}, {v: "showThumbs", descr: "Показывать thumbs"}, {v: "onMouseOver", descr: "При наведении"}, {v: "no", descr: "Не показывать"}]},
-    "max-userpic-width":     {default: "100",         type: "input",    label: "Макс. ширина фото", suffix: "px. Желательно не более 150", width: "50"},
-    "show-imgs":             {default: "onMouseOver", type: "radio",    label: "Показывать картинки",
-                              values:[{v: "showAlways", descr: "Показывать всегда"}, {v: "onMouseOver", descr: "При наведении"}, {v: "no", descr: "Не показывать"}]},
-    "max-img-width":         {default: "500",         type: "input",    label: "Макс. ширина картинки", suffix: "px", width: "50"},
-    "show-youtube-title":    {default: "true",        type: "checkbox", label: "Показывать наименования роликов youtube, макс. длина"},
-    "max-youtube-title":     {default: "40",          type: "input",    label: "", suffix: "символов", width: "50"},
-    "youtube-prefix":        {default: "youtube",     type: "input",    label: "Префикс youtube", suffix: "", width: "100"},
-    "first-post-tooltip":    {default: "true",        type: "checkbox", label: "Отображать тултип нулевого поста ссыки на другую ветку"},
-    "add-name-to-message":   {default: "true",        type: "checkbox", label: "Кнопка для ввода имени в сообщение"},
-    "add-name-style":        {default: "{font-size: 100%}", type: "input",    label: "Стиль кнопки", width: "350", suffix: "любые свойства css"},
-    "user-autocomplete":     {default: "true",        type: "checkbox", label: "Дополнение имен пользователей. При написании @"}
-};
+let options = new Map([
+    ["show-tooltips",         {default: "true",        type: "checkbox", label: "Показывать тултипы, задержка"}],
+    ["tooltip-delay",         {default: "500",         type: "input",    label: "", suffix: "мс", width: "50"}],
+    ["replace-catalog-to-is", {default: "true",        type: "checkbox", label: "Обратно заменять catalog.mista.ru на infostart.ru"}],
+    ["mark-author",           {default: "true",        type: "checkbox", label: "Подсвечивать автора цветом"}],
+    ["author-color",          {default: "#ffd784",     type: "color",    label: "", width: "100"}],
+    ["mark-yourself",         {default: "true",        type: "checkbox", label: "Подсвечивать себя цветом"}],
+    ["yourself-color",        {default: "#9bc5ef",     type: "color",    label: "", width: "100"}],
+    ["show-userpics",         {default: "onMouseOver", type: "radio",    label: "Показывать фото пользователей",
+                              values:[{v: "showAlways", descr: "Показывать всегда"}, {v: "showThumbs", descr: "Показывать thumbs"}, {v: "onMouseOver", descr: "При наведении"}, {v: "no", descr: "Не показывать"}]}],
+    ["max-userpic-width",     {default: "100",         type: "input",    label: "Макс. ширина фото", suffix: "px. Желательно не более 150", width: "50"}],
+    ["show-imgs",             {default: "onMouseOver", type: "radio",    label: "Показывать картинки",
+                              values:[{v: "showAlways", descr: "Показывать всегда"}, {v: "onMouseOver", descr: "При наведении"}, {v: "no", descr: "Не показывать"}]}],
+    ["max-img-width",         {default: "500",         type: "input",    label: "Макс. ширина картинки", suffix: "px", width: "50"}],
+    ["show-youtube-title",    {default: "true",        type: "checkbox", label: "Показывать наименования роликов youtube, макс. длина"}],
+    ["max-youtube-title",     {default: "40",          type: "input",    label: "", suffix: "символов", width: "50"}],
+    ["youtube-prefix",        {default: "youtube",     type: "input",    label: "Префикс youtube", suffix: "", width: "100"}],
+    ["first-post-tooltip",    {default: "true",        type: "checkbox", label: "Отображать тултип нулевого поста ссыки на другую ветку"}],
+    ["add-name-to-message",   {default: "true",        type: "checkbox", label: "Кнопка для ввода имени в сообщение"}],
+    ["add-name-style",        {default: '{"font-size": "100%"}', type: "input",    label: "Стиль кнопки", width: "350", suffix: "любые свойства css"}],
+    ["user-autocomplete",     {default: "true",        type: "checkbox", label: "Дополнение имен пользователей. При написании @"}]
+]);
 
 let formOptions = [
     ['show-tooltips', 'tooltip-delay'],
@@ -86,7 +86,7 @@ function processLinkToMistaCatalog(element, url) {
     //http://www.forum.mista.ru/topic.php?id=783361
     if (url.search("catalog.mista.ru") === -1) return false;
 
-    if (options["replace-catalog-to-is"].value === 'true') {
+    if (options.get("replace-catalog-to-is").value === 'true') {
         let text = $(element).text();
         let newUrl   = url.replace(/catalog.mista/i, "infostart");
         let newTrext = text.replace(/catalog.mista/i, "infostart");
@@ -100,10 +100,10 @@ function processLinkToMistaCatalog(element, url) {
 
 // ----------------Options-------------------------------------
 function readAllOptions(){
-    let keys = Object.keys(options);
-    for (let i in keys) {
-        let name = keys[i];
-        options[name].value = readOption(name, options[name].default);
+    //let keys = Object.keys(options);
+    for (let [name, option] of options) {
+        //let name = keys[i];
+        option.value = readOption(name, option.default);
     }
 }
 
@@ -113,14 +113,14 @@ function saveOption(name, value) {
 
 function readOption(name) {
     let value = window.localStorage.getItem(name);
-    if (!value) value = options[name].default;
-    return value;
+    return value || options.get(name).default;
 }
 
 function loadOptions(){
-    let keys = Object.keys(options);
-    for (let name of keys){
-        let option = options[name];
+    //let keys = Object.keys(options);
+    //for (let name of keys){
+    for (let [name, option] of options){
+        //let option = options[name];
         if (option.type === 'checkbox'){
             if (option.value === 'true') $(`#${name}`).prop("checked", "checked");
 
@@ -153,7 +153,7 @@ function openMistaScriptOptions(){
 
         for (let name of row){
 
-            let option = options[name];
+            let option = options.get(name);
 
             if (option.type === 'checkbox') {
                 html +=
@@ -197,20 +197,20 @@ function openMistaScriptOptions(){
 
     $('#applyOptions').click(function(){
 
-        let keys = Object.keys(options);
-        for (let name of keys){
-            let option = options[name];
+        //let keys = Object.keys(options);
+        for (let [name, option] of options){
+            //let option = options[name];
             if (option.type === 'checkbox'){
                 option.value = String($('#' + name).is(':checked'));
 
             } else if (option.type === 'radio'){
-                option.value = $('input:radio[name=' + name + ']:checked').val();
+                option.value = $(`input:radio[name=${name}]:checked`).val();
 
             } else if (option.type === 'input'){
-                option.value = $('#' + name).val();
+                option.value = $(`#${name}`).val();
 
             } else if (option.type === 'color'){
-                option.value = $('#' + name).val();
+                option.value = $(`#${name}`).val();
             }
 
             saveOption(name, option.value);
@@ -228,10 +228,8 @@ function openMistaScriptOptions(){
     });
 
     $('#defaultOptions').click(function(){
-        let keys = Object.keys(options);
-        for (let i in keys){
-            let name = keys[i];
-            options[name].value = options[name].default;
+        for (let [name, option] of options){
+            option.value = option.default;
         }
         loadOptions();
     });
@@ -327,7 +325,7 @@ function setMsgTextAjax(topicId, msgId, elemHeader, elemText){
 
 function loadDataMsg(topicId, msgId){
     return function() {
-        setMsgText(topicId, msgId, $("#tooltip-header" + msgId), $("#tooltip-text" + msgId));
+        setMsgText(topicId, msgId, $(`#tooltip-header${msgId}`), $(`#tooltip-text${msgId}`));
     };
 }
 
@@ -340,7 +338,7 @@ function createTooltip(link, msgId) {
         left = left - 630;
     }
 
-    let elem = $("#tooltip" + msgId)
+    let elem = $(`#tooltip${msgId}`)
         .draggable()
         .css({
             "top": loc.top + "px",
@@ -362,7 +360,7 @@ function attachTooltip(link, id, loadDataFunc) {
         timer = setTimeout(function() {
             createTooltip(link, id);
             loadDataFunc();
-        }, +options['tooltip-delay'].value);
+        }, +options.get('tooltip-delay').value);
     },
     function() {
         // on mouse out, cancel the timer
@@ -385,14 +383,14 @@ function processLinkToPost(element, url, onlyBindEvents) {
     if (!msgId) msgId = "0";
 
     if (topicId !== currentTopicId) {
-        if (options['first-post-tooltip'].value !== 'true') {
+        if (options.get('first-post-tooltip').value !== 'true') {
             return true;
         } else {
             if (!onlyBindEvents) $('<span class="agh" style="cursor: pointer">[?]</span>').insertAfter($(element));
         }
     }
 
-    if (topicId === currentTopicId && options['show-tooltips'].value !== 'true') return true;
+    if (topicId === currentTopicId && options.get('show-tooltips').value !== 'true') return true;
 
     attachTooltip(element, msgId, loadDataMsg(topicId, msgId));
 }
@@ -404,7 +402,7 @@ function loadDataImg(url, id, header){
 
     return function(){
         $(`#tooltip-header${id}`).html(`<b>${header}</b>`);
-        $(`#tooltip-text${id}`).html(`<img src="${url}" style="max-width: ${options['max-img-width'].value}px; height:auto;">`);
+        $(`#tooltip-text${id}`).html(`<img src="${url}" style="max-width: ${options.get('max-img-width').value}px; height:auto;">`);
         $(`#tooltip-text${id} img`).on('load', function(){
             if ($(this).height() === 1) {
                 $(`#tooltip-text${id}`).text('Картинка отсутствует');
@@ -422,8 +420,8 @@ function getImgUrl(url) {
 
     } else if (url.search(/.+\.(jpg|jpeg|png)$/) !== -1) {
         return url;
-    } else if (url.search(/yadi\.sk/) !== -1) {
-        return "";
+    } else if (url.search(/skrinshoter\.ru/) !== -1) {
+        return url.replace(/\?a$/, ".png");
     }
 }
 
@@ -433,7 +431,7 @@ function processLinkToImage(element, url, onlyBindEvents) {
     if (!imgUrl) return false;
     if ($(element).text() === '') return true;
 
-    if (options['show-imgs'].value === 'showAlways'){
+    if (options.get('show-imgs').value === 'showAlways'){
         if (!onlyBindEvents) {
             $(element).text("");
             let html = '';
@@ -441,11 +439,11 @@ function processLinkToImage(element, url, onlyBindEvents) {
             if (prev.length === 0) {
                 html = '<br>';
             }
-            html += `<img src="${imgUrl}" style="max-width: ${options['max-img-width'].value}px; height:auto;"/>`;
+            html += `<img src="${imgUrl}" style="max-width: ${options.get('max-img-width').value}px; height:auto;"/>`;
             $(html).appendTo($(element));
         }
 
-    } else if (options['show-imgs'].value === 'onMouseOver') {
+    } else if (options.get('show-imgs').value === 'onMouseOver') {
         if (!onlyBindEvents) $('<span class="agh" style="cursor: pointer">[?]</span>').insertAfter($(element));
         attachTooltip(element, '_p', loadDataImg(imgUrl, "_p"));
     }
@@ -466,8 +464,8 @@ function setYoutubeTitle(link, videoId, onlyBindEvents) {
         try {
             let fullTitle = data.items[0].snippet.title;
             let title = fullTitle;
-            if (fullTitle.length > options['max-youtube-title'].value) title = title.substring(0, options['max-youtube-title'].value) + '...';
-            $(link).text(options['youtube-prefix'].value + ': ' + title);
+            if (fullTitle.length > options.get('max-youtube-title').value) title = title.substring(0, options.get('max-youtube-title').value) + '...';
+            $(link).text(options.get('youtube-prefix').value + ': ' + title);
             $(link).attr('title', fullTitle);
         } catch(e) {
             console.log(e.message);
@@ -481,7 +479,7 @@ function processLinkToYoutube(element, url, onlyBindEvents) {
     let videoId;
     // youtube.com/watch?v=videoId
     if (url.search(/youtube/) !== -1) {
-        if (options['show-youtube-title'].value === 'true'){
+        if (options.get('show-youtube-title').value === 'true'){
             try{
                 videoId = url.match(/v=(.+)(\&|$)/)[1];
             } catch(e){}
@@ -492,7 +490,7 @@ function processLinkToYoutube(element, url, onlyBindEvents) {
 
     // youtu.be/videoId
     if (url.search(/youtu\.be/) !== -1) {
-        if (options['show-youtube-title'].value === 'true'){
+        if (options.get('show-youtube-title').value === 'true'){
             try{
                 videoId = url.match(/e\/(.+)(\&|$)/)[1];
             } catch(e){}
@@ -507,19 +505,19 @@ function processLinkToYoutube(element, url, onlyBindEvents) {
 // ----------------Users---------------------------------------
 function processLinkToUser(element, url, userPostMap, onlyBindEvents) {
 
-    if (options['show-userpics'].value === 'no') return;
+    if (options.get('show-userpics').value === 'no') return;
     let userId = $(element).attr('data-user_id');
     if (!userId) return;
 
     let userName = $(element).text();
     let imgUrl;
-    if (options['show-userpics'].value === 'showThumbs') {
+    if (options.get('show-userpics').value === 'showThumbs') {
         imgUrl = `/users_photo/thumb/${userId}.jpg`;
     } else {
         imgUrl = `/users_photo/mid/${userId}.jpg`;
     }
 
-    if (options['show-userpics'].value === 'onMouseOver') {
+    if (options.get('show-userpics').value === 'onMouseOver') {
         let user = $(element).text();
         attachTooltip(element, '_p', loadDataImg(imgUrl, '_p', user));
 
@@ -529,7 +527,7 @@ function processLinkToUser(element, url, userPostMap, onlyBindEvents) {
             let msgId = +$(element).parent().attr('id').replace('tduser', '');
             if (userPostMap[msgId - 1] !== userId) {
 
-                let img = $(`<img src="${imgUrl}" style="max-width: ${options['max-userpic-width'].value}px; height: auto"><br>`).insertBefore($(element));
+                let img = $(`<img src="${imgUrl}" style="max-width: ${options.get('max-userpic-width').value}px; height: auto"><br>`).insertBefore($(element));
                 img.on('load', function(){
                     // Delete empty image to remove empty space
                     if ($(this).height() === 1) {
@@ -541,11 +539,16 @@ function processLinkToUser(element, url, userPostMap, onlyBindEvents) {
         }
     }
 
-    if (options['add-name-to-message'].value === 'true') {
+    if (options.get('add-name-to-message').value === 'true') {
         let span;
         if (!onlyBindEvents) {
             span = $(`<span id="addUserToMessage${userId}" class="agh" style="cursor: pointer"> &#9654;</span>`).insertAfter($(element));
-            span.css(JSON.parse(options['add-name-style'].value));
+            try {
+                span.css(JSON.parse(options.get('add-name-style').value));
+            } catch(e) {
+                console.error("incorrect css for button");
+                console.error(e.message);
+            }
         } else {
             span = $(`#addUserToMessage${userId}`);
         }
@@ -571,20 +574,20 @@ function addUserToMessage(userId, userName) {
 function processLinkToAuthor(element, url, onlyBindEvents) {
 
     if ($(element).text() !== topicAuthor) return false;
-    if (options['mark-author'].value !== 'true') return false;
+    if (options.get('mark-author').value !== 'true') return false;
     if (onlyBindEvents) return true;
 
-    $(element).css({'background': options['author-color'].value});
+    $(element).css({'background': options.get('author-color').value});
     return true;
 }
 
 function processLinkToYourself(element, url, onlyBindEvents) {
 
     if (url !== yourUrl) return false;
-    if (options['mark-yourself'].value !== 'true') return false;
+    if (options.get('mark-yourself').value !== 'true') return false;
     if (onlyBindEvents) return true;
 
-    $(element).css({'background': options['yourself-color'].value});
+    $(element).css({'background': options.get('yourself-color').value});
     return true;
 }
 
@@ -620,7 +623,7 @@ function run(parentElemHeader, parentElemText, onlyBindEvents){
 
 function addUserAutocomplete(){
 
-    if (options['user-autocomplete'].value !== 'true') return;
+    if (options.get('user-autocomplete').value !== 'true') return;
 
     $("<style>")
     .prop("type", "text/css")
