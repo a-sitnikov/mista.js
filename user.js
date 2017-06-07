@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         mista.ru
 // @namespace    http://tampermonkey.net/
-// @version      1.1.5
+// @version      1.1.6
 // @description  Make mista great again!
 // @author       acsent
 // @match        *.mista.ru/*
@@ -13,7 +13,7 @@
 // @updateURL    https://cdn.jsdelivr.net/gh/a-sitnikov/mista.js@latest/user.js
 // ==/UserScript==
 
-const mistaScriptVersion = '1.1.5';
+const mistaScriptVersion = '1.1.6';
 let tooltipsOrder = [];
 let tooltipsMap = {};
 let currentTopicId = 0;
@@ -116,22 +116,22 @@ function readOption(name) {
     return value || options.get(name).default;
 }
 
-function loadOptions(){
-    //let keys = Object.keys(options);
-    //for (let name of keys){
+function loadOptions(param){
+
+    param = param || 'value';
+
     for (let [name, option] of options){
-        //let option = options[name];
         if (option.type === 'checkbox'){
-            if (option.value === 'true') $(`#${name}`).prop("checked", "checked");
+            if (option[param] === 'true') $(`#${name}`).prop("checked", "checked");
 
         } else if (option.type === 'radio'){
-            $(`input:radio[name="${name}"][value="${option.value}"]`).prop("checked", "checked");
+            $(`input:radio[name="${name}"][value="${option[param]}"]`).prop("checked", "checked");
 
         } else if (option.type === 'input'){
-            $(`#${name}`).val(option.value);
+            $(`#${name}`).val(option[param]);
 
         } else if (option.type === 'color'){
-            $(`#${name}`).val(option.value.toUpperCase());
+            $(`#${name}`).val(option[param].toUpperCase());
         }
     }
 }
@@ -172,7 +172,6 @@ function openMistaScriptOptions(){
             } else if (option.type === 'radio') {
                 html += `<label for="${name}">${option.label}</label><br>`;
                 for (let value of option.values){
-                    //let value = option.values[k];
                     html += `<input type="radio" name="${name}" value="${value.v}"> ${value.descr}`;
                 }
             }
@@ -197,11 +196,10 @@ function openMistaScriptOptions(){
 
     $('#applyOptions').click(function(){
 
-        //let keys = Object.keys(options);
         for (let [name, option] of options){
-            //let option = options[name];
+
             if (option.type === 'checkbox'){
-                option.value = String($('#' + name).is(':checked'));
+                option.value = String($(`#${name}`).is(':checked'));
 
             } else if (option.type === 'radio'){
                 option.value = $(`input:radio[name=${name}]:checked`).val();
@@ -228,10 +226,7 @@ function openMistaScriptOptions(){
     });
 
     $('#defaultOptions').click(function(){
-        for (let [name, option] of options){
-            option.value = option.default;
-        }
-        loadOptions();
+        loadOptions('default');
     });
 }
 
