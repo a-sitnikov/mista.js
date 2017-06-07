@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         mista.ru
 // @namespace    http://tampermonkey.net/
-// @version      1.1.10
+// @version      1.2.0
 // @description  Make mista great again!
 // @author       acsent
 // @match        *.mista.ru/*
@@ -13,7 +13,7 @@
 // @updateURL    https://cdn.jsdelivr.net/gh/a-sitnikov/mista.js@latest/user.js
 // ==/UserScript==
 
-const mistaScriptVersion = '1.1.10';
+const mistaScriptVersion = '1.2.0';
 let tooltipsOrder = [];
 let tooltipsMap = {};
 let currentTopicId = 0;
@@ -23,7 +23,7 @@ let topicAuthor;
 let options = new Map([
     ["open-in-new_window",    {default: "true",        type: "checkbox", label: "Открывать ветки в новом окне"}],
     ["show-tooltips",         {default: "true",        type: "checkbox", label: "Показывать тултипы, задержка"}],
-    ["show-tooltips-on-main", {default: "true",        type: "checkbox", label: "Показывать тултипы на главной странице, для \" » \" "}],
+    ["show-tooltips-on-main", {default: "true",        type: "checkbox", label: "Показывать тултипы на главной странице, при наведении на кол-во ответов "}],
     ["tooltip-delay",         {default: "500",         type: "input",    label: "", suffix: "мс", width: "50"}],
     ["replace-catalog-to-is", {default: "true",        type: "checkbox", label: "Обратно заменять catalog.mista.ru на infostart.ru"}],
     ["mark-author",           {default: "true",        type: "checkbox", label: "Подсвечивать автора цветом"}],
@@ -607,12 +607,13 @@ function run(parentElemHeader, parentElemText, onlyBindEvents){
 
     // main page
     if (!parentElemText) {
-        if (options.get('show-tooltips-on-main').value === 'true') {
-            $('a[href$="last20#F"]', 'td[id^="tt"]').each(function(a){
-
-                let url = $(this).attr('href');
-                if (processLinkToPost(this, url, true)) return;
-
+         if (options.get('open-in-new_window').value === 'true') {
+            $('td:nth-child(2).cc').each(function(){
+                let text = $(this).text();
+                $(this).text("");
+                let url = $(this).next().find('a:first()').attr("href") + "&p=last20#F";
+                let link = $(`<a href="${url}" style="color: black">${text}</a>`).appendTo($(this));
+                (processLinkToPost(link, url, true));
             });
         }
         if (options.get('open-in-new_window').value === 'true') {

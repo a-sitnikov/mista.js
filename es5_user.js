@@ -5,7 +5,7 @@ var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = [
 // ==UserScript==
 // @name         mista.ru
 // @namespace    http://tampermonkey.net/
-// @version      1.1.9
+// @version      1.1.10
 // @description  Make mista great again!
 // @author       acsent
 // @match        *.mista.ru/*
@@ -17,18 +17,18 @@ var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = [
 // @updateURL    https://cdn.jsdelivr.net/gh/a-sitnikov/mista.js@latest/user.js
 // ==/UserScript==
 
-var mistaScriptVersion = '1.1.9';
+var mistaScriptVersion = '1.1.10';
 var tooltipsOrder = [];
 var tooltipsMap = {};
 var currentTopicId = 0;
 var yourUrl = void 0;
 var topicAuthor = void 0;
 
-var options = new Map([["show-tooltips", { default: "true", type: "checkbox", label: "Показывать тултипы, задержка" }], ["tooltip-delay", { default: "500", type: "input", label: "", suffix: "мс", width: "50" }], ["replace-catalog-to-is", { default: "true", type: "checkbox", label: "Обратно заменять catalog.mista.ru на infostart.ru" }], ["mark-author", { default: "true", type: "checkbox", label: "Подсвечивать автора цветом" }], ["author-color", { default: "#ffd784", type: "color", label: "", width: "100" }], ["mark-yourself", { default: "true", type: "checkbox", label: "Подсвечивать себя цветом" }], ["yourself-color", { default: "#9bc5ef", type: "color", label: "", width: "100" }], ["show-userpics", { default: "onMouseOver", type: "radio", label: "Показывать фото пользователей",
+var options = new Map([["open-in-new_window", { default: "true", type: "checkbox", label: "Открывать ветки в новом окне" }], ["show-tooltips", { default: "true", type: "checkbox", label: "Показывать тултипы, задержка" }], ["show-tooltips-on-main", { default: "true", type: "checkbox", label: "Показывать тултипы на главной странице, для \" » \" " }], ["tooltip-delay", { default: "500", type: "input", label: "", suffix: "мс", width: "50" }], ["replace-catalog-to-is", { default: "true", type: "checkbox", label: "Обратно заменять catalog.mista.ru на infostart.ru" }], ["mark-author", { default: "true", type: "checkbox", label: "Подсвечивать автора цветом" }], ["author-color", { default: "#ffd784", type: "color", label: "", width: "100" }], ["mark-yourself", { default: "true", type: "checkbox", label: "Подсвечивать себя цветом" }], ["yourself-color", { default: "#9bc5ef", type: "color", label: "", width: "100" }], ["show-userpics", { default: "onMouseOver", type: "radio", label: "Показывать фото пользователей",
     values: [{ v: "showAlways", descr: "Показывать всегда" }, { v: "showThumbs", descr: "Показывать thumbs" }, { v: "onMouseOver", descr: "При наведении" }, { v: "no", descr: "Не показывать" }] }], ["max-userpic-width", { default: "100", type: "input", label: "Макс. ширина фото", suffix: "px. Желательно не более 150", width: "50" }], ["show-imgs", { default: "onMouseOver", type: "radio", label: "Показывать картинки",
     values: [{ v: "showAlways", descr: "Показывать всегда" }, { v: "onMouseOver", descr: "При наведении" }, { v: "no", descr: "Не показывать" }] }], ["max-img-width", { default: "500", type: "input", label: "Макс. ширина картинки", suffix: "px", width: "50" }], ["show-youtube-title", { default: "true", type: "checkbox", label: "Показывать наименования роликов youtube, макс. длина" }], ["max-youtube-title", { default: "40", type: "input", label: "", suffix: "символов", width: "50" }], ["youtube-prefix", { default: "youtube", type: "input", label: "Префикс youtube", suffix: "", width: "100" }], ["first-post-tooltip", { default: "true", type: "checkbox", label: "Отображать тултип нулевого поста ссыки на другую ветку" }], ["add-name-to-message", { default: "true", type: "checkbox", label: "Кнопка для ввода имени в сообщение" }], ["add-name-style", { default: '{"font-size": "100%"}', type: "input", label: "Стиль кнопки", width: "350", suffix: "любые свойства css" }], ["user-autocomplete", { default: "true", type: "checkbox", label: "Дополнение имен пользователей. При написании @" }]]);
 
-var formOptions = [['show-tooltips', 'tooltip-delay'], ['replace-catalog-to-is'], ['first-post-tooltip'], ['mark-author', 'author-color'], ['mark-yourself', 'yourself-color'], ['show-userpics'], ['max-userpic-width'], ['show-imgs'], ['max-img-width'], ['show-youtube-title', 'max-youtube-title'], ['youtube-prefix'], ['add-name-to-message'], ['add-name-style'], ['user-autocomplete']];
+var formOptions = [['open-in-new_window'], ['show-tooltips', 'tooltip-delay'], ['show-tooltips-on-main'], ['replace-catalog-to-is'], ['first-post-tooltip'], ['mark-author', 'author-color'], ['mark-yourself', 'yourself-color'], ['show-userpics'], ['max-userpic-width'], ['show-imgs'], ['max-img-width'], ['show-youtube-title', 'max-youtube-title'], ['youtube-prefix'], ['add-name-to-message'], ['add-name-style'], ['user-autocomplete']];
 
 function utimeToDate(utime) {
     var a = new Date(utime * 1000);
@@ -70,7 +70,6 @@ function processLinkToMistaCatalog(element, url) {
 
 // ----------------Options-------------------------------------
 function readAllOptions() {
-    //let keys = Object.keys(options);
     var _iteratorNormalCompletion = true;
     var _didIteratorError = false;
     var _iteratorError = undefined;
@@ -81,7 +80,6 @@ function readAllOptions() {
                 name = _step$value[0],
                 option = _step$value[1];
 
-            //let name = keys[i];
             option.value = readOption(name, option.default);
         }
     } catch (err) {
@@ -174,7 +172,7 @@ function openMistaScriptOptions() {
                     var option = options.get(name);
 
                     if (option.type === 'checkbox') {
-                        html += "<input id=\"" + name + "\" type=\"checkbox\" name=\"" + name + "\">\n                    '<label for=\"" + name + "\">" + option.label + "</label>";
+                        html += "<input id=\"" + name + "\" type=\"checkbox\" name=\"" + name + "\">\n                     <label for=\"" + name + "\">" + option.label + "</label>";
                     } else if (option.type === 'input' || option.type === 'color') {
                         if (option.label) {
                             html += "<label for=\"" + name + "\">" + option.label + "</label>";
@@ -438,7 +436,7 @@ function attachTooltip(link, id, loadDataFunc) {
     });
 
     $(link).mousedown(function (event) {
-        if (event.which === 3) clearTimeout(timer); // left mouse button
+        clearTimeout(timer);
     });
 }
 
@@ -667,11 +665,18 @@ function run(parentElemHeader, parentElemText, onlyBindEvents) {
 
     // main page
     if (!parentElemText) {
-        $('a[href$="last20#F"]', 'td[id^="tt"]').each(function (a) {
+        if (options.get('show-tooltips-on-main').value === 'true') {
+            $('a[href$="last20#F"]', 'td[id^="tt"]').each(function (a) {
 
-            var url = $(this).attr('href');
-            if (processLinkToPost(this, url, true)) return;
-        });
+                var url = $(this).attr('href');
+                if (processLinkToPost(this, url, true)) return;
+            });
+        }
+        if (options.get('open-in-new_window').value === 'true') {
+            $('a', 'td[id^="tt"]').each(function (a) {
+                $(this).prop("target", "_blank");
+            });
+        }
     }
 
     parentElemHeader = parentElemHeader || $('td[id^=tduser]');
