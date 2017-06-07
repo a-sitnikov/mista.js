@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         mista.ru
 // @namespace    http://tampermonkey.net/
-// @version      1.1.8
+// @version      1.1.9
 // @description  Make mista great again!
 // @author       acsent
 // @match        *.mista.ru/*
@@ -13,7 +13,7 @@
 // @updateURL    https://cdn.jsdelivr.net/gh/a-sitnikov/mista.js@latest/user.js
 // ==/UserScript==
 
-const mistaScriptVersion = '1.1.8';
+const mistaScriptVersion = '1.1.9';
 let tooltipsOrder = [];
 let tooltipsMap = {};
 let currentTopicId = 0;
@@ -289,6 +289,16 @@ function setMsgText(topicId, msgId, elemHeader, elemText){
 
 function setMsgTextAjax(topicId, msgId, elemHeader, elemText){
 
+    if (msgId === 'F') {
+        $.ajax({
+            url: `ajax_gettopic.php?id=${topicId}`
+        }).done(function(data) {
+            let dataObj = JSON.parse(data);
+            setMsgTextAjax(topicId, dataObj.answers_count, elemHeader, elemText);
+        });
+        return;
+    }
+
     let apiUrl = `ajax_topic.php?id=${topicId}&from=${msgId}&to=${(+msgId + 1)}`;
 
     $.ajax({
@@ -302,7 +312,7 @@ function setMsgTextAjax(topicId, msgId, elemHeader, elemText){
         let msgArr = dataObj.filter(function(a){ return a.n === msgId; });
         if (msgArr.length === 1) {
             let msg = msgArr[0];
-            let text = msg.text.replace(/\(([0-9]+)\)/g, "<a href='#$1'>($1)</a>");
+            let text = msg.text.replace(/\(([0-9]+)\)/g, '<a href="topic.php?id=' + topicId + '#$1">($1)</a>');
             let user =
                 `<b>${msg.user}</b><br>
                  <span class='message-info'>${msg.n}  - ${utimeToDate(msg.utime)}</span>`;
@@ -361,15 +371,19 @@ function attachTooltip(link, id, loadDataFunc) {
         // on mouse out, cancel the timer
         clearTimeout(timer);
     });
+
+    $(link).mousedown(function(event){
+        if (event.which === 3) clearTimeout(timer); // left mouse button
+    });
 }
 
 function processLinkToPost(element, url, onlyBindEvents) {
     let topicId, msgId;
     try {
-        topicId = url.match(/topic.php\?id=([0-9]+)($|\&)/)[1];
+        topicId = url.match(/topic.php\?id=([0-9]+)($|\&|#)/)[1];
     } catch(e) {}
     try {
-        msgId = url.match(/#([0-9]+)/)[1];
+        msgId = url.match(/#(F|[0-9]+)/)[1];
     } catch(e) {}
 
     if (!topicId && !msgId) return false;
@@ -381,7 +395,7 @@ function processLinkToPost(element, url, onlyBindEvents) {
         if (options.get('first-post-tooltip').value !== 'true') {
             return true;
         } else {
-            if (!onlyBindEvents) $('<span class="agh" style="cursor: pointer">[?]</span>').insertAfter($(element));
+            if (!onlyBindEvents && $(element).text().search(/\([0-9]+\)/) === -1) $('<span class="agh" style="cursor: pointer">[?]</span>').insertAfter($(element));
         }
     }
 
@@ -588,6 +602,16 @@ function processLinkToYourself(element, url, onlyBindEvents) {
 
 // ----------------Run-----------------------------------------
 function run(parentElemHeader, parentElemText, onlyBindEvents){
+
+    // main page
+    if (!parentElemText) {
+        $('a[href$="last20#F"]', 'td[id^="tt"]').each(function(a){
+
+            let url = $(this).attr('href');
+            if (processLinkToPost(this, url, true)) return;
+
+        });
+    }
 
     parentElemHeader = parentElemHeader || $('td[id^=tduser]');
     parentElemText   = parentElemText   || $('td[id^=tdmsg]');
