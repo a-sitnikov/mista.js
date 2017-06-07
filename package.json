@@ -1,0 +1,24 @@
+{
+  "name": "mista.js",
+  "version": "1.1.6",
+  "description": "![options](https://github.com/a-sitnikov/mista.js/raw/master/mista.script.png)",
+  "main": "user.js",
+  "dependencies": {},
+  "devDependencies": {
+	"babel-preset-es2015": "^6.24.1"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+	"babel": "babel user.js --out-file=user_es5.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/a-sitnikov/mista.js.git"
+  },
+  "author": "acsent",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/a-sitnikov/mista.js/issues"
+  },
+  "homepage": "https://github.com/a-sitnikov/mista.js#readme"
+}

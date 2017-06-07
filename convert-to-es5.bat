@@ -1,0 +1,1 @@
+babel user.js --out-file=es5_user.js --presets es2015
