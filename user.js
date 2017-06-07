@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         mista.ru
 // @namespace    http://tampermonkey.net/
-// @version      1.2.0
+// @version      1.2.1
 // @description  Make mista great again!
 // @author       acsent
 // @match        *.mista.ru/*
@@ -13,7 +13,7 @@
 // @updateURL    https://cdn.jsdelivr.net/gh/a-sitnikov/mista.js@latest/user.js
 // ==/UserScript==
 
-const mistaScriptVersion = '1.2.0';
+const mistaScriptVersion = '1.2.1';
 let tooltipsOrder = [];
 let tooltipsMap = {};
 let currentTopicId = 0;
@@ -607,7 +607,7 @@ function run(parentElemHeader, parentElemText, onlyBindEvents){
 
     // main page
     if (!parentElemText) {
-         if (options.get('open-in-new_window').value === 'true') {
+         if (options.get('show-tooltips-on-main').value === 'true') {
             $('td:nth-child(2).cc').each(function(){
                 let text = $(this).text();
                 $(this).text("");
