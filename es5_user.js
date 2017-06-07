@@ -5,7 +5,7 @@ var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = [
 // ==UserScript==
 // @name         mista.ru
 // @namespace    http://tampermonkey.net/
-// @version      1.1.8
+// @version      1.1.9
 // @description  Make mista great again!
 // @author       acsent
 // @match        *.mista.ru/*
@@ -17,7 +17,7 @@ var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = [
 // @updateURL    https://cdn.jsdelivr.net/gh/a-sitnikov/mista.js@latest/user.js
 // ==/UserScript==
 
-var mistaScriptVersion = '1.1.8';
+var mistaScriptVersion = '1.1.9';
 var tooltipsOrder = [];
 var tooltipsMap = {};
 var currentTopicId = 0;
@@ -358,6 +358,16 @@ function setMsgText(topicId, msgId, elemHeader, elemText) {
 
 function setMsgTextAjax(topicId, msgId, elemHeader, elemText) {
 
+    if (msgId === 'F') {
+        $.ajax({
+            url: "ajax_gettopic.php?id=" + topicId
+        }).done(function (data) {
+            var dataObj = JSON.parse(data);
+            setMsgTextAjax(topicId, dataObj.answers_count, elemHeader, elemText);
+        });
+        return;
+    }
+
     var apiUrl = "ajax_topic.php?id=" + topicId + "&from=" + msgId + "&to=" + (+msgId + 1);
 
     $.ajax({
@@ -373,7 +383,7 @@ function setMsgTextAjax(topicId, msgId, elemHeader, elemText) {
         });
         if (msgArr.length === 1) {
             var msg = msgArr[0];
-            var text = msg.text.replace(/\(([0-9]+)\)/g, "<a href='#$1'>($1)</a>");
+            var text = msg.text.replace(/\(([0-9]+)\)/g, '<a href="topic.php?id=' + topicId + '#$1">($1)</a>');
             var user = "<b>" + msg.user + "</b><br>\n                 <span class='message-info'>" + msg.n + "  - " + utimeToDate(msg.utime) + "</span>";
             elemText.html(text);
             if (elemHeader) elemHeader.html(user);
@@ -426,16 +436,20 @@ function attachTooltip(link, id, loadDataFunc) {
         // on mouse out, cancel the timer
         clearTimeout(timer);
     });
+
+    $(link).mousedown(function (event) {
+        if (event.which === 3) clearTimeout(timer); // left mouse button
+    });
 }
 
 function processLinkToPost(element, url, onlyBindEvents) {
     var topicId = void 0,
         msgId = void 0;
     try {
-        topicId = url.match(/topic.php\?id=([0-9]+)($|\&)/)[1];
+        topicId = url.match(/topic.php\?id=([0-9]+)($|\&|#)/)[1];
     } catch (e) {}
     try {
-        msgId = url.match(/#([0-9]+)/)[1];
+        msgId = url.match(/#(F|[0-9]+)/)[1];
     } catch (e) {}
 
     if (!topicId && !msgId) return false;
@@ -447,7 +461,7 @@ function processLinkToPost(element, url, onlyBindEvents) {
         if (options.get('first-post-tooltip').value !== 'true') {
             return true;
         } else {
-            if (!onlyBindEvents) $('<span class="agh" style="cursor: pointer">[?]</span>').insertAfter($(element));
+            if (!onlyBindEvents && $(element).text().search(/\([0-9]+\)/) === -1) $('<span class="agh" style="cursor: pointer">[?]</span>').insertAfter($(element));
         }
     }
 
@@ -650,6 +664,15 @@ function processLinkToYourself(element, url, onlyBindEvents) {
 
 // ----------------Run-----------------------------------------
 function run(parentElemHeader, parentElemText, onlyBindEvents) {
+
+    // main page
+    if (!parentElemText) {
+        $('a[href$="last20#F"]', 'td[id^="tt"]').each(function (a) {
+
+            var url = $(this).attr('href');
+            if (processLinkToPost(this, url, true)) return;
+        });
+    }
 
     parentElemHeader = parentElemHeader || $('td[id^=tduser]');
     parentElemText = parentElemText || $('td[id^=tdmsg]');

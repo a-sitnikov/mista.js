@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         mista.ru
 // @namespace    http://tampermonkey.net/
-// @version      1.1.9
+// @version      1.1.10
 // @description  Make mista great again!
 // @author       acsent
 // @match        *.mista.ru/*
@@ -13,7 +13,7 @@
 // @updateURL    https://cdn.jsdelivr.net/gh/a-sitnikov/mista.js@latest/user.js
 // ==/UserScript==
 
-const mistaScriptVersion = '1.1.9';
+const mistaScriptVersion = '1.1.10';
 let tooltipsOrder = [];
 let tooltipsMap = {};
 let currentTopicId = 0;
@@ -21,7 +21,9 @@ let yourUrl;
 let topicAuthor;
 
 let options = new Map([
+    ["open-in-new_window",    {default: "true",        type: "checkbox", label: "Открывать ветки в новом окне"}],
     ["show-tooltips",         {default: "true",        type: "checkbox", label: "Показывать тултипы, задержка"}],
+    ["show-tooltips-on-main", {default: "true",        type: "checkbox", label: "Показывать тултипы на главной странице, для \" » \" "}],
     ["tooltip-delay",         {default: "500",         type: "input",    label: "", suffix: "мс", width: "50"}],
     ["replace-catalog-to-is", {default: "true",        type: "checkbox", label: "Обратно заменять catalog.mista.ru на infostart.ru"}],
     ["mark-author",           {default: "true",        type: "checkbox", label: "Подсвечивать автора цветом"}],
@@ -44,7 +46,9 @@ let options = new Map([
 ]);
 
 let formOptions = [
+    ['open-in-new_window'],
     ['show-tooltips', 'tooltip-delay'],
+    ['show-tooltips-on-main'],
     ['replace-catalog-to-is'],
     ['first-post-tooltip'],
     ['mark-author', 'author-color'],
@@ -100,9 +104,7 @@ function processLinkToMistaCatalog(element, url) {
 
 // ----------------Options-------------------------------------
 function readAllOptions(){
-    //let keys = Object.keys(options);
     for (let [name, option] of options) {
-        //let name = keys[i];
         option.value = readOption(name, option.default);
     }
 }
@@ -158,7 +160,7 @@ function openMistaScriptOptions(){
             if (option.type === 'checkbox') {
                 html +=
                     `<input id="${name}" type="checkbox" name="${name}">
-                    '<label for="${name}">${option.label}</label>`;
+                     <label for="${name}">${option.label}</label>`;
 
             } else if (option.type === 'input' || option.type === 'color') {
                 if (option.label){
@@ -373,7 +375,7 @@ function attachTooltip(link, id, loadDataFunc) {
     });
 
     $(link).mousedown(function(event){
-        if (event.which === 3) clearTimeout(timer); // left mouse button
+        clearTimeout(timer);
     });
 }
 
@@ -605,12 +607,19 @@ function run(parentElemHeader, parentElemText, onlyBindEvents){
 
     // main page
     if (!parentElemText) {
-        $('a[href$="last20#F"]', 'td[id^="tt"]').each(function(a){
+        if (options.get('show-tooltips-on-main').value === 'true') {
+            $('a[href$="last20#F"]', 'td[id^="tt"]').each(function(a){
 
-            let url = $(this).attr('href');
-            if (processLinkToPost(this, url, true)) return;
+                let url = $(this).attr('href');
+                if (processLinkToPost(this, url, true)) return;
 
-        });
+            });
+        }
+        if (options.get('open-in-new_window').value === 'true') {
+            $('a', 'td[id^="tt"]').each(function(a){
+                $(this).prop("target", "_blank");
+            });
+        }
     }
 
     parentElemHeader = parentElemHeader || $('td[id^=tduser]');
