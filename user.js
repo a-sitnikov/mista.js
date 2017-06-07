@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         mista.ru
 // @namespace    http://tampermonkey.net/
-// @version      1.1.6
+// @version      1.1.8
 // @description  Make mista great again!
 // @author       acsent
 // @match        *.mista.ru/*
@@ -13,7 +13,7 @@
 // @updateURL    https://cdn.jsdelivr.net/gh/a-sitnikov/mista.js@latest/user.js
 // ==/UserScript==
 
-const mistaScriptVersion = '1.1.6';
+const mistaScriptVersion = '1.1.8';
 let tooltipsOrder = [];
 let tooltipsMap = {};
 let currentTopicId = 0;
@@ -650,14 +650,15 @@ function addUserAutocomplete(){
     }`)
     .appendTo("head");
 
+    let count = 20;
     $('textarea').textcomplete([{
         match: /(^|\s)@([a-zA-Zа-яА-Я0-9_]{2,})$/,
         search: function (term, callback) {
             if (!term) return;
             $.ajax({
-                url: 'http://forum-mista.pro/api/users.php?name=' + encodeURI(term)
+                url: `http://forum-mista.pro/api/users.php?name=${encodeURI(term)}&count=${count}`
             }).done(function(data){
-                let dataObj = JSON.parse(data).slice(0, 20).map((a) => a.name);
+                let dataObj = JSON.parse(data).map(function(a){return a.name;});
                 callback(dataObj);
             }).fail(function () {
                 callback([]); // Callback must be invoked even if something went wrong.
@@ -670,12 +671,14 @@ function addUserAutocomplete(){
                 return ' @{' + word + '} ';
         },
         template: function(value, term) {
-            return value;
-        }
+            return `<b>${term}</b>` + value.substring(term.length);
+        },
+        // index in match result
+        index: 2
     }], {
         appendTo: 'body',
         dropdownClassName: 'dropdown-menu',
-        maxCount: 20
+        maxCount: count
     });
 }
 

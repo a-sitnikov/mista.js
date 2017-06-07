@@ -5,7 +5,7 @@ var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = [
 // ==UserScript==
 // @name         mista.ru
 // @namespace    http://tampermonkey.net/
-// @version      1.1.6
+// @version      1.1.8
 // @description  Make mista great again!
 // @author       acsent
 // @match        *.mista.ru/*
@@ -17,7 +17,7 @@ var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = [
 // @updateURL    https://cdn.jsdelivr.net/gh/a-sitnikov/mista.js@latest/user.js
 // ==/UserScript==
 
-var mistaScriptVersion = '1.1.6';
+var mistaScriptVersion = '1.1.8';
 var tooltipsOrder = [];
 var tooltipsMap = {};
 var currentTopicId = 0;
@@ -681,14 +681,15 @@ function addUserAutocomplete() {
 
     $("<style>").prop("type", "text/css").html(".dropdown-menu {\n        background: white;\n        list-style-type:none;\n        overflow-y: auto;\n        max-height: 200px;\n        border: 1px solid #CECECE;\n    }\n    .dropdown-menu .textcomplete-item a,\n    .dropdown-menu .textcomplete-item a:hover {\n        cursor: pointer;\n        font-weight: normal;\n        color: #000;\n        position: relative;\n        padding: 3px 10px;\n        display: block;\n        border-bottom: 1px solid #CECECE;\n     }\n    .dropdown-menu .textcomplete-item.active a {\n        background: lightgrey;\n    }\n    /* Highlighting of the matching part\n    of each search result */\n    .dropdown-menu .textcomplete-item a em {\n        font-style: normal;\n        font-weight: bold;\n    }").appendTo("head");
 
+    var count = 20;
     $('textarea').textcomplete([{
         match: /(^|\s)@([a-zA-Zа-яА-Я0-9_]{2,})$/,
         search: function search(term, callback) {
             if (!term) return;
             $.ajax({
-                url: 'http://forum-mista.pro/api/users.php?name=' + encodeURI(term)
+                url: "http://forum-mista.pro/api/users.php?name=" + encodeURI(term) + "&count=" + count
             }).done(function (data) {
-                var dataObj = JSON.parse(data).slice(0, 20).map(function (a) {
+                var dataObj = JSON.parse(data).map(function (a) {
                     return a.name;
                 });
                 callback(dataObj);
@@ -700,12 +701,14 @@ function addUserAutocomplete() {
             if (word.search(' ') === -1) return ' @' + word;else return ' @{' + word + '} ';
         },
         template: function template(value, term) {
-            return value;
-        }
+            return "<b>" + term + "</b>" + value.substring(term.length);
+        },
+        // index in match result
+        index: 2
     }], {
         appendTo: 'body',
         dropdownClassName: 'dropdown-menu',
-        maxCount: 20
+        maxCount: count
     });
 }
 
