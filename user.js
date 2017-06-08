@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         mista.ru
 // @namespace    http://tampermonkey.net/
-// @version      1.2.1
+// @version      1.2.2
 // @description  Make mista great again!
 // @author       acsent
 // @match        *.mista.ru/*
@@ -13,7 +13,7 @@
 // @updateURL    https://cdn.jsdelivr.net/gh/a-sitnikov/mista.js@latest/user.js
 // ==/UserScript==
 
-const mistaScriptVersion = '1.2.1';
+const mistaScriptVersion = '1.2.2';
 let tooltipsOrder = [];
 let tooltipsMap = {};
 let currentTopicId = 0;
@@ -141,7 +141,7 @@ function loadOptions(param){
 function openMistaScriptOptions(){
     let html =
        `<div id="mista-script-overlay" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: #000; z-index:1000; opacity: 0.85"; pointer-events: none;></div>
-        <div id="mista-script" style="position:fixed; left: 25%; top: 25%; background:#FFFFE1; border:1px solid #000000; width:630px; font-weight:normal; z-index: 1001">
+        <div id="mista-script" style="position:fixed; left: 25%; top: 15%; background:#FFFFE1; border:1px solid #000000; width:630px; font-weight:normal; z-index: 1001">
              <span id="closeOptions" style="POSITION: absolute; RIGHT: 6px; TOP: 3px; cursor:hand; cursor:pointer">
                   <b> x </b>
              </span>
@@ -295,7 +295,14 @@ function setMsgTextAjax(topicId, msgId, elemHeader, elemText){
         $.ajax({
             url: `ajax_gettopic.php?id=${topicId}`
         }).done(function(data) {
-            let dataObj = JSON.parse(data);
+            let dataObj;
+            data = data.replace(/\\&/g, '&');
+            try{
+                dataObj = JSON.parse(data);
+            }catch(e){
+                console.error(e.message);
+                console.log(data);
+            }
             setMsgTextAjax(topicId, dataObj.answers_count, elemHeader, elemText);
         });
         return;
@@ -613,6 +620,7 @@ function run(parentElemHeader, parentElemText, onlyBindEvents){
                 $(this).text("");
                 let url = $(this).next().find('a:first()').attr("href") + "&p=last20#F";
                 let link = $(`<a href="${url}" style="color: black">${text}</a>`).appendTo($(this));
+                if (options.get('open-in-new_window').value === 'true') link.prop("target", "_blank");
                 (processLinkToPost(link, url, true));
             });
         }
