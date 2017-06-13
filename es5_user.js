@@ -5,7 +5,7 @@ var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = [
 // ==UserScript==
 // @name         mista.ru
 // @namespace    http://tampermonkey.net/
-// @version      1.2.2
+// @version      1.3.0
 // @description  Make mista great again!
 // @author       acsent
 // @match        *.mista.ru/*
@@ -17,7 +17,7 @@ var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = [
 // @updateURL    https://cdn.jsdelivr.net/gh/a-sitnikov/mista.js@latest/user.js
 // ==/UserScript==
 
-var mistaScriptVersion = '1.2.2';
+var mistaScriptVersion = '1.2.3';
 var tooltipsOrder = [];
 var tooltipsMap = {};
 var currentTopicId = 0;
@@ -26,9 +26,9 @@ var topicAuthor = void 0;
 
 var options = new Map([["open-in-new_window", { default: "true", type: "checkbox", label: "Открывать ветки в новом окне" }], ["show-tooltips", { default: "true", type: "checkbox", label: "Показывать тултипы, задержка" }], ["show-tooltips-on-main", { default: "true", type: "checkbox", label: "Показывать тултипы на главной странице, при наведении на кол-во ответов " }], ["tooltip-delay", { default: "500", type: "input", label: "", suffix: "мс", width: "50" }], ["replace-catalog-to-is", { default: "true", type: "checkbox", label: "Обратно заменять catalog.mista.ru на infostart.ru" }], ["mark-author", { default: "true", type: "checkbox", label: "Подсвечивать автора цветом" }], ["author-color", { default: "#ffd784", type: "color", label: "", width: "100" }], ["mark-yourself", { default: "true", type: "checkbox", label: "Подсвечивать себя цветом" }], ["yourself-color", { default: "#9bc5ef", type: "color", label: "", width: "100" }], ["show-userpics", { default: "onMouseOver", type: "radio", label: "Показывать фото пользователей",
     values: [{ v: "showAlways", descr: "Показывать всегда" }, { v: "showThumbs", descr: "Показывать thumbs" }, { v: "onMouseOver", descr: "При наведении" }, { v: "no", descr: "Не показывать" }] }], ["max-userpic-width", { default: "100", type: "input", label: "Макс. ширина фото", suffix: "px. Желательно не более 150", width: "50" }], ["show-imgs", { default: "onMouseOver", type: "radio", label: "Показывать картинки",
-    values: [{ v: "showAlways", descr: "Показывать всегда" }, { v: "onMouseOver", descr: "При наведении" }, { v: "no", descr: "Не показывать" }] }], ["max-img-width", { default: "500", type: "input", label: "Макс. ширина картинки", suffix: "px", width: "50" }], ["show-youtube-title", { default: "true", type: "checkbox", label: "Показывать наименования роликов youtube, макс. длина" }], ["max-youtube-title", { default: "40", type: "input", label: "", suffix: "символов", width: "50" }], ["youtube-prefix", { default: "youtube", type: "input", label: "Префикс youtube", suffix: "", width: "100" }], ["first-post-tooltip", { default: "true", type: "checkbox", label: "Отображать тултип нулевого поста ссыки на другую ветку" }], ["add-name-to-message", { default: "true", type: "checkbox", label: "Кнопка для ввода имени в сообщение" }], ["add-name-style", { default: '{"font-size": "100%"}', type: "input", label: "Стиль кнопки", width: "350", suffix: "любые свойства css" }], ["user-autocomplete", { default: "true", type: "checkbox", label: "Дополнение имен пользователей. При написании @" }]]);
+    values: [{ v: "showAlways", descr: "Показывать всегда" }, { v: "onMouseOver", descr: "При наведении" }, { v: "no", descr: "Не показывать" }] }], ["max-img-width", { default: "500", type: "input", label: "Макс. ширина картинки", suffix: "px", width: "50" }], ["show-youtube-title", { default: "true", type: "checkbox", label: "Показывать наименования роликов youtube, макс. длина" }], ["max-youtube-title", { default: "40", type: "input", label: "", suffix: "символов", width: "50" }], ["youtube-prefix", { default: "youtube", type: "input", label: "Префикс youtube", suffix: "", width: "100" }], ["first-post-tooltip", { default: "true", type: "checkbox", label: "Отображать тултип нулевого поста ссыки на другую ветку" }], ["add-name-to-message", { default: "true", type: "checkbox", label: "Кнопка для ввода имени в сообщение" }], ["add-name-style", { default: '{"font-size": "100%"}', type: "input", label: "Стиль кнопки", width: "350", suffix: "любые свойства css" }], ["user-autocomplete", { default: "true", type: "checkbox", label: "Дополнение имен пользователей. При написании @" }], ["fix-broken-links", { default: "true", type: "checkbox", label: "Чинить поломанные ссылки (с русскими символами)" }]]);
 
-var formOptions = [['open-in-new_window'], ['show-tooltips', 'tooltip-delay'], ['show-tooltips-on-main'], ['replace-catalog-to-is'], ['first-post-tooltip'], ['mark-author', 'author-color'], ['mark-yourself', 'yourself-color'], ['show-userpics'], ['max-userpic-width'], ['show-imgs'], ['max-img-width'], ['show-youtube-title', 'max-youtube-title'], ['youtube-prefix'], ['add-name-to-message'], ['add-name-style'], ['user-autocomplete']];
+var formOptions = [['open-in-new_window'], ['show-tooltips', 'tooltip-delay'], ['show-tooltips-on-main'], ['replace-catalog-to-is'], ['first-post-tooltip'], ['mark-author', 'author-color'], ['mark-yourself', 'yourself-color'], ['show-userpics'], ['max-userpic-width'], ['show-imgs'], ['max-img-width'], ['show-youtube-title', 'max-youtube-title'], ['youtube-prefix'], ['add-name-to-message'], ['add-name-style'], ['user-autocomplete'], ['fix-broken-links']];
 
 function utimeToDate(utime) {
     var a = new Date(utime * 1000);
@@ -501,6 +501,8 @@ function getImgUrl(url) {
         return url;
     } else if (url.search(/skrinshoter\.ru/) !== -1) {
         return url.replace(/\?a$/, ".png");
+    } else if (url.search(/joxi\.ru/) !== -1) {
+        return url + ".jpg";
     }
 }
 
@@ -529,6 +531,18 @@ function processLinkToImage(element, url, onlyBindEvents) {
     return true;
 }
 
+function processBrokenLink(element, url, onlyBindEvents) {
+    if (options.get('fix-broken-links').value === 'true') {
+
+        if ($(element).attr("class") === 'extralink' && !onlyBindEvents) {
+            var parentHtml = $(element).parent().html();
+            var regExp = new RegExp(url + '<\/a>(\\)|[а-яА-Я\-0-9]*)');
+            var arr = parentHtml.match(regExp);
+            if (arr.length > 1) $(element).attr("href", url + arr[1]);
+        }
+    }
+}
+
 // ----------------Youtube-------------------------------------
 function setYoutubeTitle(link, videoId, onlyBindEvents) {
 
@@ -542,7 +556,8 @@ function setYoutubeTitle(link, videoId, onlyBindEvents) {
         try {
             var fullTitle = data.items[0].snippet.title;
             var title = fullTitle;
-            if (fullTitle.length > options.get('max-youtube-title').value) title = title.substring(0, options.get('max-youtube-title').value) + '...';
+            var maxLength = +options.get('max-youtube-title').value;
+            if (fullTitle.length > maxLength + 5) title = title.substring(0, maxLength) + '...';
             $(link).text(options.get('youtube-prefix').value + ': ' + title);
             $(link).attr('title', fullTitle);
         } catch (e) {
@@ -706,6 +721,7 @@ function run(parentElemHeader, parentElemText, onlyBindEvents) {
     parentElemText.find('a').each(function (a) {
 
         var url = $(this).attr('href');
+        processBrokenLink(this, url, onlyBindEvents);
         if (processLinkToImage(this, url, onlyBindEvents)) return;
         if (processLinkToYoutube(this, url, onlyBindEvents)) return;
         if (processLinkToMistaCatalog(this, url, onlyBindEvents)) return;
