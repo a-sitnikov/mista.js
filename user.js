@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         mista.ru
 // @namespace    http://tampermonkey.net/
-// @version      1.2.2
+// @version      1.3.0
 // @description  Make mista great again!
 // @author       acsent
 // @match        *.mista.ru/*
@@ -13,7 +13,7 @@
 // @updateURL    https://cdn.jsdelivr.net/gh/a-sitnikov/mista.js@latest/user.js
 // ==/UserScript==
 
-const mistaScriptVersion = '1.2.2';
+const mistaScriptVersion = '1.2.3';
 let tooltipsOrder = [];
 let tooltipsMap = {};
 let currentTopicId = 0;
@@ -42,7 +42,8 @@ let options = new Map([
     ["first-post-tooltip",    {default: "true",        type: "checkbox", label: "Отображать тултип нулевого поста ссыки на другую ветку"}],
     ["add-name-to-message",   {default: "true",        type: "checkbox", label: "Кнопка для ввода имени в сообщение"}],
     ["add-name-style",        {default: '{"font-size": "100%"}', type: "input",    label: "Стиль кнопки", width: "350", suffix: "любые свойства css"}],
-    ["user-autocomplete",     {default: "true",        type: "checkbox", label: "Дополнение имен пользователей. При написании @"}]
+    ["user-autocomplete",     {default: "true",        type: "checkbox", label: "Дополнение имен пользователей. При написании @"}],
+    ["fix-broken-links",      {default: "true",        type: "checkbox", label: "Чинить поломанные ссылки (с русскими символами)"}]
 ]);
 
 let formOptions = [
@@ -61,7 +62,8 @@ let formOptions = [
     ['youtube-prefix'],
     ['add-name-to-message'],
     ['add-name-style'],
-    ['user-autocomplete']
+    ['user-autocomplete'],
+    ['fix-broken-links']
 ];
 
 function utimeToDate(utime) {
@@ -440,6 +442,8 @@ function getImgUrl(url) {
         return url;
     } else if (url.search(/skrinshoter\.ru/) !== -1) {
         return url.replace(/\?a$/, ".png");
+    } else if (url.search(/joxi\.ru/) !== -1) {
+        return url + ".jpg";
     }
 }
 
@@ -469,6 +473,18 @@ function processLinkToImage(element, url, onlyBindEvents) {
     return true;
 }
 
+function processBrokenLink(element, url, onlyBindEvents) {
+    if (options.get('fix-broken-links').value === 'true') {
+
+        if ($(element).attr("class") === 'extralink' && !onlyBindEvents) {
+            let parentHtml = $(element).parent().html();
+            let regExp = new RegExp(url + '<\/a>(\\)|[а-яА-Я\-0-9]*)');
+            let arr = parentHtml.match(regExp);
+            if (arr.length > 1) $(element).attr("href", url + arr[1]);
+        }
+    }
+}
+
 // ----------------Youtube-------------------------------------
 function setYoutubeTitle(link, videoId, onlyBindEvents) {
 
@@ -482,7 +498,8 @@ function setYoutubeTitle(link, videoId, onlyBindEvents) {
         try {
             let fullTitle = data.items[0].snippet.title;
             let title = fullTitle;
-            if (fullTitle.length > options.get('max-youtube-title').value) title = title.substring(0, options.get('max-youtube-title').value) + '...';
+            let maxLength = +options.get('max-youtube-title').value;
+            if (fullTitle.length > maxLength + 5) title = title.substring(0, maxLength) + '...';
             $(link).text(options.get('youtube-prefix').value + ': ' + title);
             $(link).attr('title', fullTitle);
         } catch(e) {
@@ -649,6 +666,7 @@ function run(parentElemHeader, parentElemText, onlyBindEvents){
     parentElemText.find('a').each(function(a){
 
         let url = $(this).attr('href');
+        processBrokenLink(this, url, onlyBindEvents);
         if (processLinkToImage(this, url, onlyBindEvents)) return;
         if (processLinkToYoutube(this, url, onlyBindEvents)) return;
         if (processLinkToMistaCatalog(this, url, onlyBindEvents)) return;
