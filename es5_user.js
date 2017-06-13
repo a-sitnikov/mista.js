@@ -17,7 +17,7 @@ var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = [
 // @updateURL    https://cdn.jsdelivr.net/gh/a-sitnikov/mista.js@latest/user.js
 // ==/UserScript==
 
-var mistaScriptVersion = '1.2.3';
+var mistaScriptVersion = '1.3.0';
 var tooltipsOrder = [];
 var tooltipsMap = {};
 var currentTopicId = 0;
