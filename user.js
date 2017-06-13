@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         mista.ru
 // @namespace    http://tampermonkey.net/
-// @version      1.3.0
+// @version      1.3.1
 // @description  Make mista great again!
 // @author       acsent
 // @match        *.mista.ru/*
@@ -13,7 +13,7 @@
 // @updateURL    https://cdn.jsdelivr.net/gh/a-sitnikov/mista.js@latest/user.js
 // ==/UserScript==
 
-const mistaScriptVersion = '1.3.0';
+const mistaScriptVersion = '1.3.1';
 let tooltipsOrder = [];
 let tooltipsMap = {};
 let currentTopicId = 0;
@@ -480,7 +480,7 @@ function processBrokenLink(element, url, onlyBindEvents) {
             let parentHtml = $(element).parent().html();
             let regExp = new RegExp(url + '<\/a>(\\)|[а-яА-Я\-0-9]*)');
             let arr = parentHtml.match(regExp);
-            if (arr.length > 1) $(element).attr("href", url + arr[1]);
+            if (arr && arr.length > 1) $(element).attr("href", url + arr[1]);
         }
     }
 }
