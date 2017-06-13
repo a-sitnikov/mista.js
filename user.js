@@ -13,7 +13,7 @@
 // @updateURL    https://cdn.jsdelivr.net/gh/a-sitnikov/mista.js@latest/user.js
 // ==/UserScript==
 
-const mistaScriptVersion = '1.2.3';
+const mistaScriptVersion = '1.3.0';
 let tooltipsOrder = [];
 let tooltipsMap = {};
 let currentTopicId = 0;
