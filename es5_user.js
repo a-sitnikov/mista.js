@@ -5,7 +5,7 @@ var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = [
 // ==UserScript==
 // @name         mista.ru
 // @namespace    http://tampermonkey.net/
-// @version      1.3.3
+// @version      1.3.4
 // @description  Make mista great again!
 // @author       acsent
 // @match        *.mista.ru/*
@@ -17,7 +17,7 @@ var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = [
 // @updateURL    https://cdn.jsdelivr.net/gh/a-sitnikov/mista.js@latest/user.js
 // ==/UserScript==
 
-var mistaScriptVersion = '1.3.3';
+var mistaScriptVersion = '1.3.4';
 var tooltipsOrder = [];
 var tooltipsMap = {};
 var currentTopicId = 0;
@@ -308,7 +308,7 @@ function openMistaScriptOptions() {
 // ----------------Tooltips-------------------------------------
 function tooltipHtml(msgId) {
     //min-width: 500px; width:auto; max-width: 1200px
-    var html = "<div id=\"tooltip" + msgId + "\" msg-id=\"" + msgId + "\" class=\"gensmall\" style=\"position:absolute; background:#FFFFE1; border:1px solid #000000; width:650px; font-weight:normal;\">\n        <div id=\"tooltip-header" + msgId + "\" msg-id=\"" + msgId + "\" style=\"cursor: move; background:white; padding:4px; border-bottom:1px solid silver\"><span><b>\u041F\u043E\u0434\u043E\u0436\u0434\u0438\u0442\u0435...</b></span></div>\n        <div id=\"tooltip-text" + msgId + "\" msg-id=\"" + msgId + "\" style=\"padding:4px\"><span>\u0418\u0434\u0435\u0442 ajax \u0437\u0430\u0433\u0440\u0443\u0437\u043A\u0430.<br/>\u042D\u0442\u043E \u043C\u043E\u0436\u0435\u0442 \u0437\u0430\u043D\u044F\u0442\u044C \u043D\u0435\u043A\u043E\u0442\u043E\u0440\u043E\u0435 \u0432\u0440\u0435\u043C\u044F.</span></div>\n        <span id=\"tooltip-close" + msgId + "\" msg-id=\"" + msgId + "\" style=\"POSITION: absolute; RIGHT: 6px; TOP: 3px; cursor:hand; cursor:pointer\">\n            <b> x </b>\n        </span>\n    </div>";
+    var html = "<div id=\"tooltip" + msgId + "\" msg-id=\"" + msgId + "\" class=\"gensmall\" style=\"position:absolute; background:#FFFFE1; border:1px solid #000000; width:650px; font-weight:normal;\">\n        <div id=\"tooltip-header" + msgId + "\" msg-id=\"" + msgId + "\" style=\"cursor: move; background:white; padding:4px; border-bottom:1px solid silver\"><span><b>\u041F\u043E\u0434\u043E\u0436\u0434\u0438\u0442\u0435...</b></span></div>\n        <div id=\"tooltip-text" + msgId + "\" msg-id=\"" + msgId + "\" style=\"padding:4px; word-break:break-word;\"><span>\u0418\u0434\u0435\u0442 ajax \u0437\u0430\u0433\u0440\u0443\u0437\u043A\u0430.<br/>\u042D\u0442\u043E \u043C\u043E\u0436\u0435\u0442 \u0437\u0430\u043D\u044F\u0442\u044C \u043D\u0435\u043A\u043E\u0442\u043E\u0440\u043E\u0435 \u0432\u0440\u0435\u043C\u044F.</span></div>\n        <span id=\"tooltip-close" + msgId + "\" msg-id=\"" + msgId + "\" style=\"POSITION: absolute; RIGHT: 6px; TOP: 3px; cursor:hand; cursor:pointer\">\n            <b> x </b>\n        </span>\n    </div>";
     return html;
 }
 
@@ -607,7 +607,9 @@ function processLinkToUser(element, url, userPostMap, onlyBindEvents) {
     var userId = $(element).attr('data-user_id');
     if (!userId) return;
 
-    var userName = $(element).text();
+    var userName = $(element).attr('data-user_name');
+    userName = userName || $(element).text();
+
     var imgUrl = void 0;
     if (options.get('show-userpics').value === 'showThumbs') {
         imgUrl = "/users_photo/thumb/" + userId + ".jpg";
@@ -663,7 +665,10 @@ function addUserToMessage(userId, userName) {
         var space = '';
         var lastLetter = text.slice(-1);
         if (lastLetter !== ' ' && lastLetter !== '\n' && text.length > 0) space = ' ';
-        return text + space + '@{' + userName + '}';
+
+        if (userName.search(' ') === -1) return text + space + '@' + userName;else {
+            return text + space + '@{' + userName + '}';
+        }
     });
 }
 

@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         mista.ru
 // @namespace    http://tampermonkey.net/
-// @version      1.3.4
+// @version      1.4.0
 // @description  Make mista great again!
 // @author       acsent
 // @match        *.mista.ru/*
@@ -13,7 +13,7 @@
 // @updateURL    https://cdn.jsdelivr.net/gh/a-sitnikov/mista.js@latest/user.js
 // ==/UserScript==
 
-const mistaScriptVersion = '1.3.4';
+const mistaScriptVersion = '1.4.0';
 let tooltipsOrder = [];
 let tooltipsMap = {};
 let currentTopicId = 0;
@@ -25,6 +25,8 @@ let options = new Map([
     ["show-tooltips",         {default: "true",        type: "checkbox", label: "Показывать тултипы, задержка"}],
     ["show-tooltips-on-main", {default: "true",        type: "checkbox", label: "Показывать тултипы на главной странице, при наведении на кол-во ответов "}],
     ["tooltip-delay",         {default: "500",         type: "input",    label: "", suffix: "мс", width: "50"}],
+    ["remove-tooltip-on-leave", {default: "false",     type: "checkbox", label: "Скрывать тултип при уходе мыши, задержка"}],
+    ["remove-tooltip-delay",    {default: "1000",         type: "input",    label: "", suffix: "мс", width: "50"}],
     ["replace-catalog-to-is", {default: "true",        type: "checkbox", label: "Обратно заменять catalog.mista.ru на infostart.ru"}],
     ["mark-author",           {default: "true",        type: "checkbox", label: "Подсвечивать автора цветом"}],
     ["author-color",          {default: "#ffd784",     type: "color",    label: "", width: "100"}],
@@ -49,6 +51,7 @@ let options = new Map([
 let formOptions = [
     ['open-in-new_window'],
     ['show-tooltips', 'tooltip-delay'],
+    ['remove-tooltip-on-leave', 'remove-tooltip-delay'],
     ['show-tooltips-on-main'],
     ['replace-catalog-to-is'],
     ['first-post-tooltip'],
@@ -238,7 +241,7 @@ function openMistaScriptOptions(){
 function tooltipHtml(msgId) {
     //min-width: 500px; width:auto; max-width: 1200px
     let html =
-    `<div id="tooltip${msgId}" msg-id="${msgId}" class="gensmall" style="position:absolute; background:#FFFFE1; border:1px solid #000000; width:650px; font-weight:normal;">
+    `<div id="tooltip_id${msgId}" msg-id="${msgId}" class="gensmall" style="position:absolute; background:#FFFFE1; border:1px solid #000000; width:650px; font-weight:normal;">
         <div id="tooltip-header${msgId}" msg-id="${msgId}" style="cursor: move; background:white; padding:4px; border-bottom:1px solid silver"><span><b>Подождите...</b></span></div>
         <div id="tooltip-text${msgId}" msg-id="${msgId}" style="padding:4px; word-break:break-word;"><span>Идет ajax загрузка.<br/>Это может занять некоторое время.</span></div>
         <span id="tooltip-close${msgId}" msg-id="${msgId}" style="POSITION: absolute; RIGHT: 6px; TOP: 3px; cursor:hand; cursor:pointer">
@@ -346,7 +349,7 @@ function loadDataMsg(topicId, msgId){
 }
 
 function createTooltip(link, msgId) {
-    if ($(`#tooltip${msgId}`).length > 0) return;
+    if ($(`#tooltip_id${msgId}`).length > 0) return;
     $(tooltipHtml(msgId)).appendTo('#body');
     let loc = $(link).offset();
     let left = loc.left;
@@ -354,7 +357,7 @@ function createTooltip(link, msgId) {
         left = left - 630;
     }
 
-    let elem = $(`#tooltip${msgId}`)
+    let elem = $(`#tooltip_id${msgId}`)
         .draggable()
         .css({
             "top": loc.top + "px",
@@ -366,6 +369,19 @@ function createTooltip(link, msgId) {
     tooltipsMap[msgId] = elem;
     tooltipsOrder.push(msgId);
 
+    if (options.get('remove-tooltip-on-leave').value === 'true') {
+
+        elem.hover(function(){
+            if (elem.is(':animated')) elem.stop().animate({opacity:'100'});
+        }, function(){
+            elem.fadeOut(+options.get('remove-tooltip-delay').value, function(){
+                tooltipsMap[msgId] = null;
+                let ind = tooltipsOrder.indexOf(msgId);
+                tooltipsOrder.splice(ind, 1);
+                $(this).remove();
+            });
+        });
+    }
     return elem;
 }
 
@@ -427,7 +443,7 @@ function loadDataImg(url, id, header){
             if ($(this).height() === 1) {
                 $(`#tooltip-text${id}`).text('Картинка отсутствует');
             } else {
-                $(`#tooltip${id}`).width($(this).width() + 8);
+                $(`#tooltip_id${id}`).width($(this).width() + 8);
             }
         });
     };
@@ -780,7 +796,7 @@ function addUserAutocomplete(){
         .click(openMistaScriptOptions);
 
     $('body').click(function(e){
-        if ($(e.target).closest('div[id^=tooltip]').length === 0) removeAllTooltips();
+        if ($(e.target).closest('div[id^=tooltip_id]').length === 0) removeAllTooltips();
     });
 
     $('#table_messages').on('mista.load', 'tr', function(event){
