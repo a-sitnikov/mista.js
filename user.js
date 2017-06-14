@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         mista.ru
 // @namespace    http://tampermonkey.net/
-// @version      1.3.3
+// @version      1.3.4
 // @description  Make mista great again!
 // @author       acsent
 // @match        *.mista.ru/*
@@ -13,7 +13,7 @@
 // @updateURL    https://cdn.jsdelivr.net/gh/a-sitnikov/mista.js@latest/user.js
 // ==/UserScript==
 
-const mistaScriptVersion = '1.3.3';
+const mistaScriptVersion = '1.3.4';
 let tooltipsOrder = [];
 let tooltipsMap = {};
 let currentTopicId = 0;
@@ -240,7 +240,7 @@ function tooltipHtml(msgId) {
     let html =
     `<div id="tooltip${msgId}" msg-id="${msgId}" class="gensmall" style="position:absolute; background:#FFFFE1; border:1px solid #000000; width:650px; font-weight:normal;">
         <div id="tooltip-header${msgId}" msg-id="${msgId}" style="cursor: move; background:white; padding:4px; border-bottom:1px solid silver"><span><b>Подождите...</b></span></div>
-        <div id="tooltip-text${msgId}" msg-id="${msgId}" style="padding:4px"><span>Идет ajax загрузка.<br/>Это может занять некоторое время.</span></div>
+        <div id="tooltip-text${msgId}" msg-id="${msgId}" style="padding:4px; word-break:break-word;"><span>Идет ajax загрузка.<br/>Это может занять некоторое время.</span></div>
         <span id="tooltip-close${msgId}" msg-id="${msgId}" style="POSITION: absolute; RIGHT: 6px; TOP: 3px; cursor:hand; cursor:pointer">
             <b> x </b>
         </span>
@@ -558,7 +558,9 @@ function processLinkToUser(element, url, userPostMap, onlyBindEvents) {
     let userId = $(element).attr('data-user_id');
     if (!userId) return;
 
-    let userName = $(element).text();
+    let userName = $(element).attr('data-user_name');
+    userName = userName || $(element).text();
+    
     let imgUrl;
     if (options.get('show-userpics').value === 'showThumbs') {
         imgUrl = `/users_photo/thumb/${userId}.jpg`;
@@ -616,7 +618,12 @@ function addUserToMessage(userId, userName) {
         let space = '';
         let lastLetter = text.slice(-1);
         if (lastLetter !== ' ' && lastLetter !== '\n' && text.length > 0) space = ' ';
-        return text + space + '@{' + userName + '}';
+
+        if (userName.search(' ') === -1)
+            return text + space + '@' + userName;
+        else {
+            return text + space + '@{' + userName + '}';
+        }
     });
 }
 

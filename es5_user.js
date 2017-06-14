@@ -5,7 +5,7 @@ var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = [
 // ==UserScript==
 // @name         mista.ru
 // @namespace    http://tampermonkey.net/
-// @version      1.3.2
+// @version      1.3.3
 // @description  Make mista great again!
 // @author       acsent
 // @match        *.mista.ru/*
@@ -17,7 +17,7 @@ var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = [
 // @updateURL    https://cdn.jsdelivr.net/gh/a-sitnikov/mista.js@latest/user.js
 // ==/UserScript==
 
-var mistaScriptVersion = '1.3.2';
+var mistaScriptVersion = '1.3.3';
 var tooltipsOrder = [];
 var tooltipsMap = {};
 var currentTopicId = 0;
@@ -536,10 +536,14 @@ function processBrokenLink(element, url, onlyBindEvents) {
 
         if ($(element).attr("class") === 'extralink' && !onlyBindEvents) {
             var parentHtml = $(element).parent().html();
-            var escapedUrl = url.replace(/\./g, '\\.').replace(/\*/g, '\\*').replace(/\+/g, '\\+').replace(/\(/g, '\\(').replace(/\)/g, '\\)').replace(/\//g, '\\/');
-            var regExp = new RegExp(escapedUrl + '<\/a>(\\)|[а-яА-Я\-\+0-9]*)');
-            var arr = parentHtml.match(regExp);
-            if (arr && arr.length > 1) $(element).attr("href", url + arr[1]);
+            var escapedUrl = url.replace(/\[/g, '\\[').replace(/\]/g, '\\]').replace(/\./g, '\\.').replace(/\./g, '\\.').replace(/\*/g, '\\*').replace(/\+/g, '\\+').replace(/\(/g, '\\(').replace(/\)/g, '\\)').replace(/\//g, '\\/');
+            try {
+                var regExp = new RegExp(escapedUrl + '<\/a>(\\)|[а-яА-Я\-\+0-9]*)');
+                var arr = parentHtml.match(regExp);
+                if (arr && arr.length > 1) $(element).attr("href", url + arr[1]);
+            } catch (e) {
+                console.error(e);
+            }
         }
     }
 }
