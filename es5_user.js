@@ -5,7 +5,7 @@ var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = [
 // ==UserScript==
 // @name         mista.ru
 // @namespace    http://tampermonkey.net/
-// @version      1.3.4
+// @version      1.4.0
 // @description  Make mista great again!
 // @author       acsent
 // @match        *.mista.ru/*
@@ -17,18 +17,18 @@ var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = [
 // @updateURL    https://cdn.jsdelivr.net/gh/a-sitnikov/mista.js@latest/user.js
 // ==/UserScript==
 
-var mistaScriptVersion = '1.3.4';
+var mistaScriptVersion = '1.4.0';
 var tooltipsOrder = [];
 var tooltipsMap = {};
 var currentTopicId = 0;
 var yourUrl = void 0;
 var topicAuthor = void 0;
 
-var options = new Map([["open-in-new_window", { default: "true", type: "checkbox", label: "Открывать ветки в новом окне" }], ["show-tooltips", { default: "true", type: "checkbox", label: "Показывать тултипы, задержка" }], ["show-tooltips-on-main", { default: "true", type: "checkbox", label: "Показывать тултипы на главной странице, при наведении на кол-во ответов " }], ["tooltip-delay", { default: "500", type: "input", label: "", suffix: "мс", width: "50" }], ["replace-catalog-to-is", { default: "true", type: "checkbox", label: "Обратно заменять catalog.mista.ru на infostart.ru" }], ["mark-author", { default: "true", type: "checkbox", label: "Подсвечивать автора цветом" }], ["author-color", { default: "#ffd784", type: "color", label: "", width: "100" }], ["mark-yourself", { default: "true", type: "checkbox", label: "Подсвечивать себя цветом" }], ["yourself-color", { default: "#9bc5ef", type: "color", label: "", width: "100" }], ["show-userpics", { default: "onMouseOver", type: "radio", label: "Показывать фото пользователей",
+var options = new Map([["open-in-new_window", { default: "true", type: "checkbox", label: "Открывать ветки в новом окне" }], ["show-tooltips", { default: "true", type: "checkbox", label: "Показывать тултипы, задержка" }], ["show-tooltips-on-main", { default: "true", type: "checkbox", label: "Показывать тултипы на главной странице, при наведении на кол-во ответов " }], ["tooltip-delay", { default: "500", type: "input", label: "", suffix: "мс", width: "50" }], ["remove-tooltip-on-leave", { default: "false", type: "checkbox", label: "Скрывать тултип при уходе мыши, задержка" }], ["remove-tooltip-delay", { default: "1000", type: "input", label: "", suffix: "мс", width: "50" }], ["replace-catalog-to-is", { default: "true", type: "checkbox", label: "Обратно заменять catalog.mista.ru на infostart.ru" }], ["mark-author", { default: "true", type: "checkbox", label: "Подсвечивать автора цветом" }], ["author-color", { default: "#ffd784", type: "color", label: "", width: "100" }], ["mark-yourself", { default: "true", type: "checkbox", label: "Подсвечивать себя цветом" }], ["yourself-color", { default: "#9bc5ef", type: "color", label: "", width: "100" }], ["show-userpics", { default: "onMouseOver", type: "radio", label: "Показывать фото пользователей",
     values: [{ v: "showAlways", descr: "Показывать всегда" }, { v: "showThumbs", descr: "Показывать thumbs" }, { v: "onMouseOver", descr: "При наведении" }, { v: "no", descr: "Не показывать" }] }], ["max-userpic-width", { default: "100", type: "input", label: "Макс. ширина фото", suffix: "px. Желательно не более 150", width: "50" }], ["show-imgs", { default: "onMouseOver", type: "radio", label: "Показывать картинки",
     values: [{ v: "showAlways", descr: "Показывать всегда" }, { v: "onMouseOver", descr: "При наведении" }, { v: "no", descr: "Не показывать" }] }], ["max-img-width", { default: "500", type: "input", label: "Макс. ширина картинки", suffix: "px", width: "50" }], ["show-youtube-title", { default: "true", type: "checkbox", label: "Показывать наименования роликов youtube, макс. длина" }], ["max-youtube-title", { default: "40", type: "input", label: "", suffix: "символов", width: "50" }], ["youtube-prefix", { default: "youtube", type: "input", label: "Префикс youtube", suffix: "", width: "100" }], ["first-post-tooltip", { default: "true", type: "checkbox", label: "Отображать тултип нулевого поста ссыки на другую ветку" }], ["add-name-to-message", { default: "true", type: "checkbox", label: "Кнопка для ввода имени в сообщение" }], ["add-name-style", { default: '{"font-size": "100%"}', type: "input", label: "Стиль кнопки", width: "350", suffix: "любые свойства css" }], ["user-autocomplete", { default: "true", type: "checkbox", label: "Дополнение имен пользователей. При написании @" }], ["fix-broken-links", { default: "true", type: "checkbox", label: "Чинить поломанные ссылки (с русскими символами)" }]]);
 
-var formOptions = [['open-in-new_window'], ['show-tooltips', 'tooltip-delay'], ['show-tooltips-on-main'], ['replace-catalog-to-is'], ['first-post-tooltip'], ['mark-author', 'author-color'], ['mark-yourself', 'yourself-color'], ['show-userpics'], ['max-userpic-width'], ['show-imgs'], ['max-img-width'], ['show-youtube-title', 'max-youtube-title'], ['youtube-prefix'], ['add-name-to-message'], ['add-name-style'], ['user-autocomplete'], ['fix-broken-links']];
+var formOptions = [['open-in-new_window'], ['show-tooltips', 'tooltip-delay'], ['remove-tooltip-on-leave', 'remove-tooltip-delay'], ['show-tooltips-on-main'], ['replace-catalog-to-is'], ['first-post-tooltip'], ['mark-author', 'author-color'], ['mark-yourself', 'yourself-color'], ['show-userpics'], ['max-userpic-width'], ['show-imgs'], ['max-img-width'], ['show-youtube-title', 'max-youtube-title'], ['youtube-prefix'], ['add-name-to-message'], ['add-name-style'], ['user-autocomplete'], ['fix-broken-links']];
 
 function utimeToDate(utime) {
     var a = new Date(utime * 1000);
@@ -308,7 +308,7 @@ function openMistaScriptOptions() {
 // ----------------Tooltips-------------------------------------
 function tooltipHtml(msgId) {
     //min-width: 500px; width:auto; max-width: 1200px
-    var html = "<div id=\"tooltip" + msgId + "\" msg-id=\"" + msgId + "\" class=\"gensmall\" style=\"position:absolute; background:#FFFFE1; border:1px solid #000000; width:650px; font-weight:normal;\">\n        <div id=\"tooltip-header" + msgId + "\" msg-id=\"" + msgId + "\" style=\"cursor: move; background:white; padding:4px; border-bottom:1px solid silver\"><span><b>\u041F\u043E\u0434\u043E\u0436\u0434\u0438\u0442\u0435...</b></span></div>\n        <div id=\"tooltip-text" + msgId + "\" msg-id=\"" + msgId + "\" style=\"padding:4px; word-break:break-word;\"><span>\u0418\u0434\u0435\u0442 ajax \u0437\u0430\u0433\u0440\u0443\u0437\u043A\u0430.<br/>\u042D\u0442\u043E \u043C\u043E\u0436\u0435\u0442 \u0437\u0430\u043D\u044F\u0442\u044C \u043D\u0435\u043A\u043E\u0442\u043E\u0440\u043E\u0435 \u0432\u0440\u0435\u043C\u044F.</span></div>\n        <span id=\"tooltip-close" + msgId + "\" msg-id=\"" + msgId + "\" style=\"POSITION: absolute; RIGHT: 6px; TOP: 3px; cursor:hand; cursor:pointer\">\n            <b> x </b>\n        </span>\n    </div>";
+    var html = "<div id=\"tooltip_id" + msgId + "\" msg-id=\"" + msgId + "\" class=\"gensmall\" style=\"position:absolute; background:#FFFFE1; border:1px solid #000000; width:650px; font-weight:normal;\">\n        <div id=\"tooltip-header" + msgId + "\" msg-id=\"" + msgId + "\" style=\"cursor: move; background:white; padding:4px; border-bottom:1px solid silver\"><span><b>\u041F\u043E\u0434\u043E\u0436\u0434\u0438\u0442\u0435...</b></span></div>\n        <div id=\"tooltip-text" + msgId + "\" msg-id=\"" + msgId + "\" style=\"padding:4px; word-break:break-word;\"><span>\u0418\u0434\u0435\u0442 ajax \u0437\u0430\u0433\u0440\u0443\u0437\u043A\u0430.<br/>\u042D\u0442\u043E \u043C\u043E\u0436\u0435\u0442 \u0437\u0430\u043D\u044F\u0442\u044C \u043D\u0435\u043A\u043E\u0442\u043E\u0440\u043E\u0435 \u0432\u0440\u0435\u043C\u044F.</span></div>\n        <span id=\"tooltip-close" + msgId + "\" msg-id=\"" + msgId + "\" style=\"POSITION: absolute; RIGHT: 6px; TOP: 3px; cursor:hand; cursor:pointer\">\n            <b> x </b>\n        </span>\n    </div>";
     return html;
 }
 
@@ -409,7 +409,7 @@ function loadDataMsg(topicId, msgId) {
 }
 
 function createTooltip(link, msgId) {
-    if ($("#tooltip" + msgId).length > 0) return;
+    if ($("#tooltip_id" + msgId).length > 0) return;
     $(tooltipHtml(msgId)).appendTo('#body');
     var loc = $(link).offset();
     var left = loc.left;
@@ -417,7 +417,7 @@ function createTooltip(link, msgId) {
         left = left - 630;
     }
 
-    var elem = $("#tooltip" + msgId).draggable().css({
+    var elem = $("#tooltip_id" + msgId).draggable().css({
         "top": loc.top + "px",
         "left": left + "px"
         //"z-index": "999"
@@ -426,6 +426,19 @@ function createTooltip(link, msgId) {
     tooltipsMap[msgId] = elem;
     tooltipsOrder.push(msgId);
 
+    if (options.get('remove-tooltip-on-leave').value === 'true') {
+
+        elem.hover(function () {
+            if (elem.is(':animated')) elem.stop().animate({ opacity: '100' });
+        }, function () {
+            elem.fadeOut(+options.get('remove-tooltip-delay').value, function () {
+                tooltipsMap[msgId] = null;
+                var ind = tooltipsOrder.indexOf(msgId);
+                tooltipsOrder.splice(ind, 1);
+                $(this).remove();
+            });
+        });
+    }
     return elem;
 }
 
@@ -487,7 +500,7 @@ function loadDataImg(url, id, header) {
             if ($(this).height() === 1) {
                 $("#tooltip-text" + id).text('Картинка отсутствует');
             } else {
-                $("#tooltip" + id).width($(this).width() + 8);
+                $("#tooltip_id" + id).width($(this).width() + 8);
             }
         });
     };
@@ -791,7 +804,7 @@ function addUserAutocomplete() {
     $('<li class="nav-item"><a href="#">Настройки Mista.Script</a></li>').appendTo("ul.nav-bar").click(openMistaScriptOptions);
 
     $('body').click(function (e) {
-        if ($(e.target).closest('div[id^=tooltip]').length === 0) removeAllTooltips();
+        if ($(e.target).closest('div[id^=tooltip_id]').length === 0) removeAllTooltips();
     });
 
     $('#table_messages').on('mista.load', 'tr', function (event) {
