@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         mista.ru
 // @namespace    http://tampermonkey.net/
-// @version      1.4.2
+// @version      1.5.0
 // @description  Make mista great again!
 // @author       acsent
 // @match        *.mista.ru/*
@@ -13,7 +13,7 @@
 // @updateURL    https://cdn.jsdelivr.net/gh/a-sitnikov/mista.js@latest/user.js
 // ==/UserScript==
 
-const mistaScriptVersion = '1.4.2';
+const mistaScriptVersion = '1.5.0';
 let tooltipsOrder = [];
 let tooltipsMap = {};
 let currentTopicId = 0;
@@ -38,6 +38,7 @@ let options = new Map([
     ["show-imgs",             {default: "onMouseOver", type: "radio",    label: "Показывать картинки",
                               values:[{v: "showAlways", descr: "Показывать всегда"}, {v: "onMouseOver", descr: "При наведении"}, {v: "no", descr: "Не показывать"}]}],
     ["max-img-width",         {default: "500",         type: "input",    label: "Макс. ширина картинки", suffix: "px", width: "50"}],
+    ["limit-embedded-img-width", {default: "true",        type: "checkbox", label: "Ограничивать ширину вставленных изображений"}],
     ["show-youtube-title",    {default: "true",        type: "checkbox", label: "Показывать наименования роликов youtube, макс. длина"}],
     ["max-youtube-title",     {default: "40",          type: "input",    label: "", suffix: "символов", width: "50"}],
     ["youtube-prefix",        {default: "youtube",     type: "input",    label: "Префикс youtube", suffix: "", width: "100"}],
@@ -61,6 +62,7 @@ let formOptions = [
     ['max-userpic-width'],
     ['show-imgs'],
     ['max-img-width'],
+    ['limit-embedded-img-width'],
     ['show-youtube-title', 'max-youtube-title'],
     ['youtube-prefix'],
     ['add-name-to-message'],
@@ -451,14 +453,14 @@ function loadDataImg(url, id, header){
 
 function getImgUrl(url) {
     if (url.search("ximage.ru/index.php") !== -1) {
-        let imgId = url.match(/id=(.+)$/)[1];
+        let imgId = url.match(/id=(.+)$/i)[1];
         return "http://ximage.ru/data/imgs/" + imgId + ".jpg";
 
-    } else if (url.search(/.+\.(jpg|jpeg|png)$/) !== -1) {
+    } else if (url.search(/.+\.(jpg|jpeg|png)$/i) !== -1) {
         return url;
-    } else if (url.search(/skrinshoter\.ru/) !== -1) {
-        return url.replace(/\?a$/, ".png");
-    } else if (url.search(/joxi\.ru/) !== -1) {
+    } else if (url.search(/skrinshoter\.ru/i) !== -1) {
+        return url.replace(/\?a$/i, ".png");
+    } else if (url.search(/joxi\.ru/i) !== -1) {
         return url + ".jpg";
     }
 }
@@ -493,6 +495,13 @@ function processBrokenLink(element, url, onlyBindEvents) {
     if (options.get('fix-broken-links').value === 'true') {
 
         if ($(element).attr("class") === 'extralink' && !onlyBindEvents) {
+
+            let regExp = /\[img\](.+)\[\/img\]/i;
+            if (url.search(regExp) !== -1) {
+                url = url.match(regExp)[1];
+                $(element).prop('href', url);
+                return url;
+            }
             let parentHtml = $(element).parent().html();
             let escapedUrl = url
                 .replace(/\[/g, '\\[')
@@ -507,12 +516,18 @@ function processBrokenLink(element, url, onlyBindEvents) {
             try {
                 let regExp = new RegExp(escapedUrl + '<\/a>(\\)|[а-яА-Я0-9\\-\\+\\_\\%]*)');
                 let arr = parentHtml.match(regExp);
-                if (arr && arr.length > 1) $(element).attr("href", url + arr[1]);
+                if (arr && arr.length > 1) {
+                    url = url + arr[1];
+                    $(element).prop("href", url);
+                    return url;
+                }
             } catch(e) {
                 console.error(e);
             }
         }
     }
+
+    return url;
 }
 
 // ----------------Youtube-------------------------------------
@@ -576,7 +591,7 @@ function processLinkToUser(element, url, userPostMap, onlyBindEvents) {
 
     let userName = $(element).attr('data-user_name');
     userName = userName || $(element).text();
-    
+
     let imgUrl;
     if (options.get('show-userpics').value === 'showThumbs') {
         imgUrl = `/users_photo/thumb/${userId}.jpg`;
@@ -703,7 +718,7 @@ function run(parentElemHeader, parentElemText, onlyBindEvents){
     parentElemText.find('a').each(function(a){
 
         let url = $(this).attr('href');
-        processBrokenLink(this, url, onlyBindEvents);
+        url = processBrokenLink(this, url, onlyBindEvents);
         if (processLinkToImage(this, url, onlyBindEvents)) return;
         if (processLinkToYoutube(this, url, onlyBindEvents)) return;
         if (processLinkToMistaCatalog(this, url, onlyBindEvents)) return;
@@ -711,6 +726,13 @@ function run(parentElemHeader, parentElemText, onlyBindEvents){
 
     });
 
+    if (options.get('limit-embedded-img-width').value === 'true') {
+        parentElemText.find('img').each(function(img){
+            let url = $(this).attr('src');
+            $(this).css('max-width', options.get('max-img-width').value + 'px')
+            .wrap(`<a href="${url}"></a>`);
+        });
+    }
 }
 
 function addUserAutocomplete(){
