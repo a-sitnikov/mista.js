@@ -5,7 +5,7 @@ var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = [
 // ==UserScript==
 // @name         mista.ru
 // @namespace    http://tampermonkey.net/
-// @version      1.5.0
+// @version      1.5.1
 // @description  Make mista great again!
 // @author       acsent
 // @match        *.mista.ru/*
@@ -17,7 +17,7 @@ var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = [
 // @updateURL    https://cdn.jsdelivr.net/gh/a-sitnikov/mista.js@latest/user.js
 // ==/UserScript==
 
-var mistaScriptVersion = '1.5.0';
+var mistaScriptVersion = '1.5.1';
 var tooltipsOrder = [];
 var tooltipsMap = {};
 var currentTopicId = 0;
@@ -361,7 +361,7 @@ function setMsgTextAjax(topicId, msgId, elemHeader, elemText) {
             url: "ajax_gettopic.php?id=" + topicId
         }).done(function (data) {
             var dataObj = void 0;
-            data = data.replace(/\\&/g, '&');
+            data = data.replace(/\\&/g, '&').replace(/\\'/g, "'");
             try {
                 dataObj = JSON.parse(data);
             } catch (e) {
@@ -556,9 +556,9 @@ function processBrokenLink(element, url, onlyBindEvents) {
                 return url;
             }
             var parentHtml = $(element).parent().html();
-            var escapedUrl = url.replace(/\[/g, '\\[').replace(/\]/g, '\\]').replace(/\./g, '\.').replace(/\./g, '\\.').replace(/\*/g, '\\*').replace(/\+/g, '\\+').replace(/\(/g, '\\(').replace(/\)/g, '\\)').replace(/\//g, '\\/');
+            var escapedUrl = url.replace(/\[/g, '\\[').replace(/\]/g, '\\]').replace(/\./g, '\.').replace(/\./g, '\\.').replace(/\*/g, '\\*').replace(/\+/g, '\\+').replace(/\(/g, '\\(').replace(/\)/g, '\\)').replace(/\?/g, '\\?').replace(/\//g, '\\/');
             try {
-                var _regExp = new RegExp(escapedUrl + '<\/a>(\\)|[а-яА-Я0-9\\-\\+\\_\\%]*)');
+                var _regExp = new RegExp(escapedUrl + '<\/a>(\\)|[а-яА-Я0-9\\-\\+\\_\\%\\?]*)');
                 var arr = parentHtml.match(_regExp);
                 if (arr && arr.length > 1) {
                     url = url + arr[1];
