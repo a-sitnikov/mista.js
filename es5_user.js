@@ -5,7 +5,7 @@ var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = [
 // ==UserScript==
 // @name         mista.ru
 // @namespace    http://tampermonkey.net/
-// @version      1.5.1
+// @version      1.5.2
 // @description  Make mista great again!
 // @author       acsent
 // @match        *.mista.ru/*
@@ -17,7 +17,7 @@ var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = [
 // @updateURL    https://cdn.jsdelivr.net/gh/a-sitnikov/mista.js@latest/user.js
 // ==/UserScript==
 
-var mistaScriptVersion = '1.5.1';
+var mistaScriptVersion = '1.5.2';
 var tooltipsOrder = [];
 var tooltipsMap = {};
 var currentTopicId = 0;
@@ -380,7 +380,7 @@ function setMsgTextAjax(topicId, msgId, elemHeader, elemText) {
     }).done(function (data) {
         dataObj = parseJSON(data);
         if (!dataObj || dataObj.length === 0) {
-            elemText.text('Сообщение не найдено');
+            elemText.html("\u0421\u043E\u043E\u0431\u0449\u0435\u043D\u0438\u0435 \u043D\u0435 \u043D\u0430\u0439\u0434\u0435\u043D\u043E<BR>Topic id: " + topicId + "<BR>Msg id: " + msgId);
             return;
         }
         var msgArr = dataObj.filter(function (a) {
@@ -494,35 +494,57 @@ function loadDataImg(url, id, header) {
     header = header || 'Картинка';
 
     return function () {
+        var maxWidth = options.get('max-img-width').value;
         $("#tooltip-header" + id).html("<b>" + header + "</b>");
-        $("#tooltip-text" + id).html("<img src=\"" + url + "\" style=\"max-width: " + options.get('max-img-width').value + "px; height:auto;\">");
+        $("#tooltip-text" + id).html("<img src=\"" + url.img + "\" style=\"max-width: " + maxWidth + "px; height:auto;\">");
         $("#tooltip-text" + id + " img").on('load', function () {
             if ($(this).height() === 1) {
                 $("#tooltip-text" + id).text('Картинка отсутствует');
             } else {
                 $("#tooltip_id" + id).width($(this).width() + 8);
             }
+        }).on('error', function () {
+            this.src = url.altImg;
+            $(this).off('error');
         });
     };
 }
 
 function getImgUrl(url) {
+
+    var img = void 0,
+        altImg = void 0;
+
     if (url.search("ximage.ru/index.php") !== -1) {
         var imgId = url.match(/id=(.+)$/i)[1];
-        return "http://ximage.ru/data/imgs/" + imgId + ".jpg";
-    } else if (url.search(/.+\.(jpg|jpeg|png)$/i) !== -1) {
-        return url;
+        img = "http://ximage.ru/data/imgs/" + imgId + ".png";
+        altImg = "http://ximage.ru/data/imgs/" + imgId + ".jpg";
+    } else if (url.search(/.+\.(jpg|jpeg|png|gif)$/i) !== -1) {
+        img = url;
     } else if (url.search(/skrinshoter\.ru/i) !== -1) {
-        return url.replace(/\?a$/i, ".png");
+        img = url.replace(/\?a$/i, ".png");
+        altImg = url.replace(/\?a$/i, ".jpg");
     } else if (url.search(/joxi\.ru/i) !== -1) {
-        return url + ".jpg";
+        img = url + ".png";
+        altImg = url + ".jpg";
+    } else if (url.search(/savepic\.ru/i) !== -1) {
+        //http://savepic.ru/14650331.htm
+        img = url.replace(/\.htm/i, ".png");
+        altImg = url.replace(/\.htm/i, ".jpg");
     }
+
+    return { img: img, altImg: altImg };
 }
 
 function processLinkToImage(element, url, onlyBindEvents) {
 
-    var imgUrl = getImgUrl(url);
-    if (!imgUrl) return false;
+    var imgUrl = void 0;
+    try {
+        imgUrl = getImgUrl(url);
+    } catch (e) {
+        console.error(e);
+    }
+    if (!imgUrl.img) return false;
     if ($(element).text() === '') return true;
 
     if (options.get('show-imgs').value === 'showAlways') {
@@ -533,8 +555,11 @@ function processLinkToImage(element, url, onlyBindEvents) {
             if (prev.length === 0) {
                 html = '<br>';
             }
-            html += "<img src=\"" + imgUrl + "\" style=\"max-width: " + options.get('max-img-width').value + "px; height:auto;\"/>";
-            $(html).appendTo($(element));
+            html += "<img src=\"" + imgUrl.img + "\" style=\"max-width: " + options.get('max-img-width').value + "px; height:auto;\"/>";
+            $(html).on('error', function () {
+                this.src = imgUrl.altImg;
+                $(this).off('error');
+            }).appendTo($(element));
         }
     } else if (options.get('show-imgs').value === 'onMouseOver') {
         if (!onlyBindEvents) $('<span class="agh" style="cursor: pointer">[?]</span>').insertAfter($(element));

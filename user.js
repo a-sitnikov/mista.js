@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         mista.ru
 // @namespace    http://tampermonkey.net/
-// @version      1.5.2
+// @version      1.5.3
 // @description  Make mista great again!
 // @author       acsent
 // @match        *.mista.ru/*
@@ -13,7 +13,7 @@
 // @updateURL    https://cdn.jsdelivr.net/gh/a-sitnikov/mista.js@latest/user.js
 // ==/UserScript==
 
-const mistaScriptVersion = '1.5.2';
+const mistaScriptVersion = '1.5.3';
 let tooltipsOrder = [];
 let tooltipsMap = {};
 let currentTopicId = 0;
@@ -631,7 +631,7 @@ function processLinkToUser(element, url, userPostMap, onlyBindEvents) {
 
     if (options.get('show-userpics').value === 'onMouseOver') {
         let user = $(element).text();
-        attachTooltip(element, '_p', loadDataImg(imgUrl, '_p', user));
+        attachTooltip(element, '_p', loadDataImg({img: imgUrl}, '_p', user));
 
     } else {
         if (!onlyBindEvents) {
@@ -876,4 +876,3 @@ function addUserAutocomplete(){
         run();
     }
 })();
-        
