@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         mista.ru
 // @namespace    http://tampermonkey.net/
-// @version      1.5.3
+// @version      1.5.4
 // @description  Make mista great again!
 // @author       acsent
 // @match        *.mista.ru/*
@@ -13,7 +13,7 @@
 // @updateURL    https://cdn.jsdelivr.net/gh/a-sitnikov/mista.js@latest/user.js
 // ==/UserScript==
 
-const mistaScriptVersion = '1.5.3';
+const mistaScriptVersion = '1.5.4';
 let tooltipsOrder = [];
 let tooltipsMap = {};
 let currentTopicId = 0;
@@ -304,6 +304,8 @@ function setMsgTextAjax(topicId, msgId, elemHeader, elemText){
         }).done(function(data) {
             let dataObj;
             data = data
+                .replace(/\\</g, '<')
+                .replace(/\\>/g, '>')
                 .replace(/\\&/g, '&')
                 .replace(/\\'/g, "'");
             try{
@@ -544,7 +546,7 @@ function processBrokenLink(element, url, onlyBindEvents) {
                 .replace(/\?/g, '\\?')
                 .replace(/\//g, '\\/');
             try {
-                let regExp = new RegExp(escapedUrl + '<\/a>(\\)|[а-яА-Я0-9\\-\\+\\_\\%\\?]*)');
+                let regExp = new RegExp(escapedUrl + '<\/a>(\\)|[а-яА-Я0-9#\\-\\+\\_\\%\\?]*)');
                 let arr = parentHtml.match(regExp);
                 if (arr && arr.length > 1) {
                     url = url + arr[1];
