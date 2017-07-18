@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         mista.ru
 // @namespace    http://tampermonkey.net/
-// @version      1.5.4
+// @version      1.5.5
 // @description  Make mista great again!
 // @author       acsent
 // @match        *.mista.ru/*
@@ -13,7 +13,7 @@
 // @updateURL    https://cdn.jsdelivr.net/gh/a-sitnikov/mista.js@latest/user.js
 // ==/UserScript==
 
-const mistaScriptVersion = '1.5.4';
+const mistaScriptVersion = '1.5.5';
 let tooltipsOrder = [];
 let tooltipsMap = {};
 let currentTopicId = 0;
@@ -85,7 +85,14 @@ function utimeToDate(utime) {
 
 function parseJSON(text) {
     try {
-        return eval(text);
+        text = text
+            .replace(/\\</g, '<')
+            .replace(/\\>/g, '>')
+            .replace(/\\&/g, '&')
+            .replace(/\\'/g, "'");
+
+        return JSON.parse(text);
+        //return eval(text);
     } catch(e) {
         console.log(e.message);
         console.log(text);
@@ -302,18 +309,7 @@ function setMsgTextAjax(topicId, msgId, elemHeader, elemText){
         $.ajax({
             url: `ajax_gettopic.php?id=${topicId}`
         }).done(function(data) {
-            let dataObj;
-            data = data
-                .replace(/\\</g, '<')
-                .replace(/\\>/g, '>')
-                .replace(/\\&/g, '&')
-                .replace(/\\'/g, "'");
-            try{
-                dataObj = JSON.parse(data);
-            }catch(e){
-                console.error(e.message);
-                console.log(data);
-            }
+            let dataObj = parseJSON(data);
             setMsgTextAjax(topicId, dataObj.answers_count, elemHeader, elemText);
         });
         return;
@@ -325,11 +321,11 @@ function setMsgTextAjax(topicId, msgId, elemHeader, elemText){
         url: apiUrl
     }).done(function(data) {
         dataObj = parseJSON(data);
-        if (!dataObj || dataObj.length === 0) {
+        if (!dataObj || dataObj.length === 0 || $.isEmptyObject(dataObj)) {
             elemText.html(`Сообщение не найдено<BR>Topic id: ${topicId}<BR>Msg id: ${msgId}`);
             return;
         }
-        let msgArr = dataObj.filter(function(a){ return a.n === msgId; });
+        let msgArr = dataObj.filter(function(a){ return a.n == msgId; });
         if (msgArr.length === 1) {
             let msg = msgArr[0];
             let text = msg.text.replace(/\(([0-9]+)\)/g, '<a href="topic.php?id=' + topicId + '#$1">($1)</a>');
@@ -340,6 +336,7 @@ function setMsgTextAjax(topicId, msgId, elemHeader, elemText){
             if (elemHeader) elemHeader.html(user);
             run(elemHeader, elemText);
             elemText.find('img').css('max-width: 642px');
+            elemText.data('msgId', msgId);
         } else {
             elemHeader.html('<b>Сообщение не найдено</b>');
             elemText.html('Возможно оно скрыто или удалено');
@@ -354,7 +351,7 @@ function loadDataMsg(topicId, msgId){
     };
 }
 
-function createTooltip(link, msgId) {
+function createTooltip(link, msgId, topicId, scroll) {
     if ($(`#tooltip_id${msgId}`).length > 0) return;
     $(tooltipHtml(msgId)).appendTo('#body');
     let loc = $(link).offset();
@@ -370,7 +367,19 @@ function createTooltip(link, msgId) {
             "left": left + "px"
             //"z-index": "999"
          })
+
         .click(removeTooltip);
+
+    if (scroll) {
+        elem.bind('mousewheel DOMMouseScroll', function(e){
+            e.preventDefault();
+            let delta = e.wheelDelta || -e.detail || e.originalEvent.wheelDelta || -e.originalEvent.detail;
+            let newMsgId = +$(`#tooltip-text${msgId}`).data('msgId') + (delta > 0 ? -1 : 1);
+            setTimeout(function(){
+                setMsgText(topicId, newMsgId, $(`#tooltip-header${msgId}`), $(`#tooltip-text${msgId}`));
+            }, 100);
+        });
+    }
 
     tooltipsMap[msgId] = elem;
     tooltipsOrder.push(msgId);
@@ -391,12 +400,12 @@ function createTooltip(link, msgId) {
     return elem;
 }
 
-function attachTooltip(link, id, loadDataFunc) {
+function attachTooltip(link, msgId, topicId, loadDataFunc, scroll) {
 
     let timer;
     $(link).hover(function(){
         timer = setTimeout(function() {
-            createTooltip(link, id);
+            createTooltip(link, msgId, topicId, scroll);
             loadDataFunc();
         }, +options.get('tooltip-delay').value);
     },
@@ -410,7 +419,7 @@ function attachTooltip(link, id, loadDataFunc) {
     });
 }
 
-function processLinkToPost(element, url, onlyBindEvents) {
+function processLinkToPost(element, url, onlyBindEvents, scroll) {
     let topicId, msgId;
     try {
         topicId = url.match(/topic.php\?id=([0-9]+)($|\&|#)/)[1];
@@ -434,7 +443,7 @@ function processLinkToPost(element, url, onlyBindEvents) {
 
     if (topicId === currentTopicId && options.get('show-tooltips').value !== 'true') return true;
 
-    attachTooltip(element, msgId, loadDataMsg(topicId, msgId));
+    attachTooltip(element, msgId, topicId, loadDataMsg(topicId, msgId), scroll);
 }
 
 // ----------------Images--------------------------------------
@@ -516,7 +525,7 @@ function processLinkToImage(element, url, onlyBindEvents) {
 
     } else if (options.get('show-imgs').value === 'onMouseOver') {
         if (!onlyBindEvents) $('<span class="agh" style="cursor: pointer">[?]</span>').insertAfter($(element));
-        attachTooltip(element, '_p', loadDataImg(imgUrl, "_p"));
+        attachTooltip(element, '_p', '', loadDataImg(imgUrl, "_p"));
     }
 
     return true;
@@ -546,7 +555,7 @@ function processBrokenLink(element, url, onlyBindEvents) {
                 .replace(/\?/g, '\\?')
                 .replace(/\//g, '\\/');
             try {
-                let regExp = new RegExp(escapedUrl + '<\/a>(\\)|[а-яА-Я0-9#\\-\\+\\_\\%\\?]*)');
+                let regExp = new RegExp(escapedUrl + '<\/a>(\\)|[а-яёА-ЯЁ0-9#\\-\\+\\_\\%\\?]*)');
                 let arr = parentHtml.match(regExp);
                 if (arr && arr.length > 1) {
                     url = url + arr[1];
@@ -633,7 +642,7 @@ function processLinkToUser(element, url, userPostMap, onlyBindEvents) {
 
     if (options.get('show-userpics').value === 'onMouseOver') {
         let user = $(element).text();
-        attachTooltip(element, '_p', loadDataImg({img: imgUrl}, '_p', user));
+        attachTooltip(element, '_p', '', loadDataImg({img: imgUrl}, '_p', user));
 
     } else {
         if (!onlyBindEvents) {
@@ -722,7 +731,7 @@ function run(parentElemHeader, parentElemText, onlyBindEvents){
                 let url = $(this).next().find('a:first()').attr("href") + "&p=last20#F";
                 let link = $(`<a href="${url}" style="color: black">${text}</a>`).appendTo($(this));
                 if (options.get('open-in-new_window').value === 'true') link.prop("target", "_blank");
-                (processLinkToPost(link, url, true));
+                processLinkToPost(link, url, true, true);
             });
         }
         if (options.get('open-in-new_window').value === 'true') {
