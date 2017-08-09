@@ -5,7 +5,7 @@ var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = [
 // ==UserScript==
 // @name         mista.ru
 // @namespace    http://tampermonkey.net/
-// @version      1.5.4
+// @version      1.5.5
 // @description  Make mista great again!
 // @author       acsent
 // @match        *.mista.ru/*
@@ -17,7 +17,7 @@ var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = [
 // @updateURL    https://cdn.jsdelivr.net/gh/a-sitnikov/mista.js@latest/user.js
 // ==/UserScript==
 
-var mistaScriptVersion = '1.5.4';
+var mistaScriptVersion = '1.5.5';
 var tooltipsOrder = [];
 var tooltipsMap = {};
 var currentTopicId = 0;
@@ -44,7 +44,10 @@ function utimeToDate(utime) {
 
 function parseJSON(text) {
     try {
-        return eval(text);
+        text = text.replace(/\\</g, '<').replace(/\\>/g, '>').replace(/\\&/g, '&').replace(/\\'/g, "'");
+
+        return JSON.parse(text);
+        //return eval(text);
     } catch (e) {
         console.log(e.message);
         console.log(text);
@@ -360,14 +363,7 @@ function setMsgTextAjax(topicId, msgId, elemHeader, elemText) {
         $.ajax({
             url: "ajax_gettopic.php?id=" + topicId
         }).done(function (data) {
-            var dataObj = void 0;
-            data = data.replace(/\\</g, '<').replace(/\\>/g, '>').replace(/\\&/g, '&').replace(/\\'/g, "'");
-            try {
-                dataObj = JSON.parse(data);
-            } catch (e) {
-                console.error(e.message);
-                console.log(data);
-            }
+            var dataObj = parseJSON(data);
             setMsgTextAjax(topicId, dataObj.answers_count, elemHeader, elemText);
         });
         return;
@@ -379,12 +375,12 @@ function setMsgTextAjax(topicId, msgId, elemHeader, elemText) {
         url: apiUrl
     }).done(function (data) {
         dataObj = parseJSON(data);
-        if (!dataObj || dataObj.length === 0) {
+        if (!dataObj || dataObj.length === 0 || $.isEmptyObject(dataObj)) {
             elemText.html("\u0421\u043E\u043E\u0431\u0449\u0435\u043D\u0438\u0435 \u043D\u0435 \u043D\u0430\u0439\u0434\u0435\u043D\u043E<BR>Topic id: " + topicId + "<BR>Msg id: " + msgId);
             return;
         }
         var msgArr = dataObj.filter(function (a) {
-            return a.n === msgId;
+            return a.n == msgId;
         });
         if (msgArr.length === 1) {
             var msg = msgArr[0];
@@ -394,6 +390,7 @@ function setMsgTextAjax(topicId, msgId, elemHeader, elemText) {
             if (elemHeader) elemHeader.html(user);
             run(elemHeader, elemText);
             elemText.find('img').css('max-width: 642px');
+            elemText.data('msgId', msgId);
         } else {
             elemHeader.html('<b>Сообщение не найдено</b>');
             elemText.html('Возможно оно скрыто или удалено');
@@ -408,7 +405,7 @@ function loadDataMsg(topicId, msgId) {
     };
 }
 
-function createTooltip(link, msgId) {
+function createTooltip(link, msgId, topicId, scroll) {
     if ($("#tooltip_id" + msgId).length > 0) return;
     $(tooltipHtml(msgId)).appendTo('#body');
     var loc = $(link).offset();
@@ -422,6 +419,17 @@ function createTooltip(link, msgId) {
         "left": left + "px"
         //"z-index": "999"
     }).click(removeTooltip);
+
+    if (scroll) {
+        elem.bind('mousewheel DOMMouseScroll', function (e) {
+            e.preventDefault();
+            var delta = e.wheelDelta || -e.detail || e.originalEvent.wheelDelta || -e.originalEvent.detail;
+            var newMsgId = +$("#tooltip-text" + msgId).data('msgId') + (delta > 0 ? -1 : 1);
+            setTimeout(function () {
+                setMsgText(topicId, newMsgId, $("#tooltip-header" + msgId), $("#tooltip-text" + msgId));
+            }, 100);
+        });
+    }
 
     tooltipsMap[msgId] = elem;
     tooltipsOrder.push(msgId);
@@ -442,12 +450,12 @@ function createTooltip(link, msgId) {
     return elem;
 }
 
-function attachTooltip(link, id, loadDataFunc) {
+function attachTooltip(link, msgId, topicId, loadDataFunc, scroll) {
 
     var timer = void 0;
     $(link).hover(function () {
         timer = setTimeout(function () {
-            createTooltip(link, id);
+            createTooltip(link, msgId, topicId, scroll);
             loadDataFunc();
         }, +options.get('tooltip-delay').value);
     }, function () {
@@ -460,7 +468,7 @@ function attachTooltip(link, id, loadDataFunc) {
     });
 }
 
-function processLinkToPost(element, url, onlyBindEvents) {
+function processLinkToPost(element, url, onlyBindEvents, scroll) {
     var topicId = void 0,
         msgId = void 0;
     try {
@@ -485,7 +493,7 @@ function processLinkToPost(element, url, onlyBindEvents) {
 
     if (topicId === currentTopicId && options.get('show-tooltips').value !== 'true') return true;
 
-    attachTooltip(element, msgId, loadDataMsg(topicId, msgId));
+    attachTooltip(element, msgId, topicId, loadDataMsg(topicId, msgId), scroll);
 }
 
 // ----------------Images--------------------------------------
@@ -563,7 +571,7 @@ function processLinkToImage(element, url, onlyBindEvents) {
         }
     } else if (options.get('show-imgs').value === 'onMouseOver') {
         if (!onlyBindEvents) $('<span class="agh" style="cursor: pointer">[?]</span>').insertAfter($(element));
-        attachTooltip(element, '_p', loadDataImg(imgUrl, "_p"));
+        attachTooltip(element, '_p', '', loadDataImg(imgUrl, "_p"));
     }
 
     return true;
@@ -583,7 +591,7 @@ function processBrokenLink(element, url, onlyBindEvents) {
             var parentHtml = $(element).parent().html();
             var escapedUrl = url.replace(/\[/g, '\\[').replace(/\]/g, '\\]').replace(/\./g, '\.').replace(/\./g, '\\.').replace(/\*/g, '\\*').replace(/\+/g, '\\+').replace(/\(/g, '\\(').replace(/\)/g, '\\)').replace(/\?/g, '\\?').replace(/\//g, '\\/');
             try {
-                var _regExp = new RegExp(escapedUrl + '<\/a>(\\)|[а-яА-Я0-9#\\-\\+\\_\\%\\?]*)');
+                var _regExp = new RegExp(escapedUrl + '<\/a>(\\)|[а-яёА-ЯЁ0-9#\\-\\+\\_\\%\\?]*)');
                 var arr = parentHtml.match(_regExp);
                 if (arr && arr.length > 1) {
                     url = url + arr[1];
@@ -670,7 +678,7 @@ function processLinkToUser(element, url, userPostMap, onlyBindEvents) {
 
     if (options.get('show-userpics').value === 'onMouseOver') {
         var user = $(element).text();
-        attachTooltip(element, '_p', loadDataImg({ img: imgUrl }, '_p', user));
+        attachTooltip(element, '_p', '', loadDataImg({ img: imgUrl }, '_p', user));
     } else {
         if (!onlyBindEvents) {
 
@@ -755,7 +763,7 @@ function run(parentElemHeader, parentElemText, onlyBindEvents) {
                 var url = $(this).next().find('a:first()').attr("href") + "&p=last20#F";
                 var link = $("<a href=\"" + url + "\" style=\"color: black\">" + text + "</a>").appendTo($(this));
                 if (options.get('open-in-new_window').value === 'true') link.prop("target", "_blank");
-                processLinkToPost(link, url, true);
+                processLinkToPost(link, url, true, true);
             });
         }
         if (options.get('open-in-new_window').value === 'true') {
