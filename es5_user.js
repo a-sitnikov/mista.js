@@ -5,7 +5,7 @@ var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = [
 // ==UserScript==
 // @name         mista.ru
 // @namespace    http://tampermonkey.net/
-// @version      1.6.0
+// @version      1.6.1
 // @description  Make mista great again!
 // @author       acsent
 // @match        *.mista.ru/*
@@ -17,7 +17,7 @@ var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = [
 // @updateURL    https://cdn.jsdelivr.net/gh/a-sitnikov/mista.js@latest/user.js
 // ==/UserScript==
 
-var mistaScriptVersion = '1.6.0';
+var mistaScriptVersion = '1.6.1';
 var tooltipsOrder = [];
 var tooltipsMap = {};
 var currentTopicId = 0;
@@ -318,7 +318,7 @@ function openMistaScriptOptions() {
         }
     }
 
-    html += "</div>\n        <div id=\"options-footer\" class=\"options-footer\">\n           <div style=\"margin-left:15px;\">\u041F\u043E\u0441\u043B\u0435 \u043F\u0440\u0438\u043C\u0435\u043D\u0435\u043D\u0438\u044F \u043D\u0430\u0441\u0442\u0440\u043E\u0435\u043A \u0441\u0442\u0440\u0430\u043D\u0438\u0446\u0443 \u043D\u0443\u0436\u043D\u043E \u043F\u0435\u0440\u0435\u0437\u0430\u0433\u0440\u0443\u0437\u0438\u0442\u044C</div>\n           <div style=\"margin:10px\">\n              <button id=\"applyOptions\" class=\"sendbutton\" style=\"margin: 5px\">OK</button>\n              <button id=\"cancelOptions\" class=\"sendbutton\" style=\"margin: 5px; float: left;\">\u041E\u0442\u043C\u0435\u043D\u0430</button>\n              <button id=\"defaultOptions\" class=\"sendbutton\" style=\"margin: 5px; float: right;\">\u0421\u0431\u0440\u043E\u0441\u0438\u0442\u044C \u043D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0438</button>\n           </div>\n           </div>\n        </div>";
+    html += "</div>\n        <div id=\"options-footer\" class=\"options-footer\">\n           <div style=\"margin: 0px 0px 5px 10px;\">\u041F\u043E\u0441\u043B\u0435 \u043F\u0440\u0438\u043C\u0435\u043D\u0435\u043D\u0438\u044F \u043D\u0430\u0441\u0442\u0440\u043E\u0435\u043A \u0441\u0442\u0440\u0430\u043D\u0438\u0446\u0443 \u043D\u0443\u0436\u043D\u043E \u043F\u0435\u0440\u0435\u0437\u0430\u0433\u0440\u0443\u0437\u0438\u0442\u044C</div>\n           <div style=\"padding: 5px 10px 5px 10px; border-top: 1px solid silver; background-color:#eee\">\n              <button id=\"applyOptions\" class=\"sendbutton\" style=\"margin: 5px; height: 30px\">OK</button>\n              <button id=\"cancelOptions\" class=\"sendbutton\" style=\"margin: 5px; float: left;height: 30px\">\u041E\u0442\u043C\u0435\u043D\u0430</button>\n              <button id=\"defaultOptions\" class=\"sendbutton\" style=\"margin: 5px; float: right; height: 30px\">\u0421\u0431\u0440\u043E\u0441\u0438\u0442\u044C \u043D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0438</button>\n           </div>\n           </div>\n        </div>";
 
     $(html).appendTo('#body');
     //$('#mista-script').draggable();
@@ -491,13 +491,23 @@ function loadDataMsg(topicId, msgId) {
 }
 
 function createTooltip(link, msgId, topicId, scroll) {
-    if ($("#tooltip_id" + msgId).length > 0) return;
-    $(tooltipHtml(msgId)).appendTo('#body');
+
     var loc = $(link).offset();
     var left = loc.left;
     if ($(window).width() - loc.left < 100) {
         left = left - 630;
     }
+
+    var tooltip = $("#tooltip_id" + msgId);
+    if (tooltip.length > 0) {
+        tooltip.css({
+            "top": loc.top + "px",
+            "left": left + "px"
+            //"z-index": "999"
+        });
+        return;
+    }
+    $(tooltipHtml(msgId)).appendTo('#body');
 
     var elem = $("#tooltip_id" + msgId).draggable().css({
         "top": loc.top + "px",
