@@ -5,7 +5,7 @@ var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = [
 // ==UserScript==
 // @name         mista.ru
 // @namespace    http://tampermonkey.net/
-// @version      1.5.6
+// @version      1.5.7
 // @description  Make mista great again!
 // @author       acsent
 // @match        *.mista.ru/*
@@ -17,7 +17,7 @@ var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = [
 // @updateURL    https://cdn.jsdelivr.net/gh/a-sitnikov/mista.js@latest/user.js
 // ==/UserScript==
 
-var mistaScriptVersion = '1.5.6';
+var mistaScriptVersion = '1.5.7';
 var tooltipsOrder = [];
 var tooltipsMap = {};
 var currentTopicId = 0;
@@ -26,9 +26,25 @@ var topicAuthor = void 0;
 
 var options = new Map([["open-in-new_window", { default: "true", type: "checkbox", label: "Открывать ветки в новом окне" }], ["show-tooltips", { default: "true", type: "checkbox", label: "Показывать тултипы, задержка" }], ["show-tooltips-on-main", { default: "true", type: "checkbox", label: "Показывать тултипы на главной странице, при наведении на кол-во ответов " }], ["tooltip-delay", { default: "500", type: "input", label: "", suffix: "мс", width: "50" }], ["remove-tooltip-on-leave", { default: "false", type: "checkbox", label: "Скрывать тултип при уходе мыши, задержка" }], ["remove-tooltip-delay", { default: "1000", type: "input", label: "", suffix: "мс", width: "50" }], ["replace-catalog-to-is", { default: "true", type: "checkbox", label: "Обратно заменять catalog.mista.ru на infostart.ru" }], ["mark-author", { default: "true", type: "checkbox", label: "Подсвечивать автора цветом" }], ["author-color", { default: "#ffd784", type: "color", label: "", width: "100" }], ["mark-yourself", { default: "true", type: "checkbox", label: "Подсвечивать себя цветом" }], ["yourself-color", { default: "#9bc5ef", type: "color", label: "", width: "100" }], ["show-userpics", { default: "onMouseOver", type: "radio", label: "Показывать фото пользователей",
     values: [{ v: "showAlways", descr: "Показывать всегда" }, { v: "showThumbs", descr: "Показывать thumbs" }, { v: "onMouseOver", descr: "При наведении" }, { v: "no", descr: "Не показывать" }] }], ["max-userpic-width", { default: "100", type: "input", label: "Макс. ширина фото", suffix: "px. Желательно не более 150", width: "50" }], ["show-imgs", { default: "onMouseOver", type: "radio", label: "Показывать картинки",
-    values: [{ v: "showAlways", descr: "Показывать всегда" }, { v: "onMouseOver", descr: "При наведении" }, { v: "no", descr: "Не показывать" }] }], ["max-img-width", { default: "500", type: "input", label: "Макс. ширина картинки", suffix: "px", width: "50" }], ["limit-embedded-img-width", { default: "true", type: "checkbox", label: "Ограничивать ширину вставленных изображений" }], ["show-youtube-title", { default: "true", type: "checkbox", label: "Показывать наименования роликов youtube, макс. длина" }], ["max-youtube-title", { default: "40", type: "input", label: "", suffix: "символов", width: "50" }], ["youtube-prefix", { default: "youtube", type: "input", label: "Префикс youtube", suffix: "", width: "100" }], ["first-post-tooltip", { default: "true", type: "checkbox", label: "Отображать тултип нулевого поста ссыки на другую ветку" }], ["add-name-to-message", { default: "true", type: "checkbox", label: "Кнопка для ввода имени в сообщение" }], ["add-name-style", { default: '{"font-size": "100%"}', type: "input", label: "Стиль кнопки", width: "350", suffix: "любые свойства css" }], ["user-autocomplete", { default: "true", type: "checkbox", label: "Дополнение имен пользователей. При написании @" }], ["fix-broken-links", { default: "true", type: "checkbox", label: "Чинить поломанные ссылки (с русскими символами)" }]]);
+    values: [{ v: "showAlways", descr: "Показывать всегда" }, { v: "onMouseOver", descr: "При наведении" }, { v: "no", descr: "Не показывать" }] }], ["max-img-width", { default: "500", type: "input", label: "Макс. ширина картинки", suffix: "px", width: "50" }], ["limit-embedded-img-width", { default: "true", type: "checkbox", label: "Ограничивать ширину вставленных изображений" }], ["show-youtube-title", { default: "true", type: "checkbox", label: "Показывать наименования роликов youtube, макс. длина" }], ["max-youtube-title", { default: "40", type: "input", label: "", suffix: "символов", width: "50" }], ["youtube-prefix", { default: "youtube", type: "input", label: "Префикс youtube", suffix: "", width: "100" }], ["first-post-tooltip", { default: "true", type: "checkbox", label: "Отображать тултип нулевого поста ссыки на другую ветку" }], ["add-name-to-message", { default: "true", type: "checkbox", label: "Кнопка для ввода имени в сообщение" }], ["add-name-style", { default: '{"font-size": "100%"}', type: "input", label: "Стиль кнопки", width: "350", suffix: "любые свойства css" }], ["user-autocomplete", { default: "true", type: "checkbox", label: "Дополнение имен пользователей. При написании @" }], ["fix-broken-links", { default: "true", type: "checkbox", label: "Чинить поломанные ссылки (с русскими символами)" }], ["scroll-tooltip-on-main", { default: "true", type: "checkbox", label: "При скролле этотого тултипа переходить к след/пред сообщениям" }]]);
 
-var formOptions = [['open-in-new_window'], ['show-tooltips', 'tooltip-delay'], ['remove-tooltip-on-leave', 'remove-tooltip-delay'], ['show-tooltips-on-main'], ['replace-catalog-to-is'], ['first-post-tooltip'], ['mark-author', 'author-color'], ['mark-yourself', 'yourself-color'], ['show-userpics'], ['max-userpic-width'], ['show-imgs'], ['max-img-width'], ['limit-embedded-img-width'], ['show-youtube-title', 'max-youtube-title'], ['youtube-prefix'], ['add-name-to-message'], ['add-name-style'], ['user-autocomplete'], ['fix-broken-links']];
+var formOptions = [{
+    id: 'tab1',
+    name: 'Тултипы',
+    rows: [['show-tooltips', 'tooltip-delay'], ['remove-tooltip-on-leave', 'remove-tooltip-delay'], ['show-tooltips-on-main'], ['scroll-tooltip-on-main'], ['first-post-tooltip']]
+}, {
+    id: 'tab2',
+    name: 'Инфо',
+    rows: [['mark-author', 'author-color'], ['mark-yourself', 'yourself-color'], ['show-userpics'], ['max-userpic-width'], ['add-name-to-message'], ['add-name-style']]
+}, {
+    id: 'tab3',
+    name: 'Текст',
+    rows: [['show-imgs'], ['max-img-width'], ['limit-embedded-img-width'], ['show-youtube-title', 'max-youtube-title'], ['youtube-prefix'], ['fix-broken-links'], ['replace-catalog-to-is']]
+}, {
+    id: 'tab4',
+    name: 'Прочее',
+    rows: [['open-in-new_window'], ['user-autocomplete']]
+}];
 
 function utimeToDate(utime) {
     var a = new Date(utime * 1000);
@@ -151,7 +167,7 @@ function loadOptions(param) {
 }
 
 function openMistaScriptOptions() {
-    var html = "<div id=\"mista-script-overlay\" style=\"position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: #000; z-index:1000; opacity: 0.85\"; pointer-events: none;></div>\n        <div id=\"mista-script\" style=\"position:fixed; left: 25%; top: 15%; background:#FFFFE1; border:1px solid #000000; width:630px; font-weight:normal; z-index: 1001\">\n             <span id=\"closeOptions\" style=\"POSITION: absolute; RIGHT: 6px; TOP: 3px; cursor:hand; cursor:pointer\">\n                  <b> x </b>\n             </span>\n             <div style=\"cursor: move; background:white; padding:4px; border-bottom:1px solid silver\">\n                 <b>\u041D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0438 Mista.Script</b> version " + mistaScriptVersion + "\n             </div>\n             <div style=\"padding:5px\">";
+    var html = "<div id=\"mista-script-overlay\" class=\"options-form-overlay\" ></div>\n        <div id=\"mista-script\" class=\"options-form\">\n             <span id=\"closeOptions\" class=\"close-button\">\n                  <b> x </b>\n             </span>\n             <div class=\"options-header\" style=\"cursor: default\">\n                 <b>\u041D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0438 Mista.Script</b> version " + mistaScriptVersion + "\n             </div>\n             <div class=\"tabs\">";
 
     var _iteratorNormalCompletion3 = true;
     var _didIteratorError3 = false;
@@ -159,76 +175,9 @@ function openMistaScriptOptions() {
 
     try {
         for (var _iterator3 = formOptions[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
-            var row = _step3.value;
+            var tab = _step3.value;
 
-            html += '<div style="margin-bottom:5px">';
-
-            var _iteratorNormalCompletion5 = true;
-            var _didIteratorError5 = false;
-            var _iteratorError5 = undefined;
-
-            try {
-                for (var _iterator5 = row[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
-                    var name = _step5.value;
-
-
-                    var option = options.get(name);
-
-                    if (option.type === 'checkbox') {
-                        html += "<input id=\"" + name + "\" type=\"checkbox\" name=\"" + name + "\">\n                     <label for=\"" + name + "\">" + option.label + "</label>";
-                    } else if (option.type === 'input' || option.type === 'color') {
-                        if (option.label) {
-                            html += "<label for=\"" + name + "\">" + option.label + "</label>";
-                        }
-                        var typeColor = option.type === 'color' ? ' type="color"' : '';
-                        html += "<input id=\"" + name + "\" name=\"" + name + "\" style=\"margin-left:5px; width: " + option.width + "px\" " + typeColor + ">";
-                        if (option.suffix) {
-                            html += ' ' + option.suffix;
-                        }
-                    } else if (option.type === 'radio') {
-                        html += "<label for=\"" + name + "\">" + option.label + "</label><br>";
-                        var _iteratorNormalCompletion6 = true;
-                        var _didIteratorError6 = false;
-                        var _iteratorError6 = undefined;
-
-                        try {
-                            for (var _iterator6 = option.values[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
-                                var value = _step6.value;
-
-                                html += "<input type=\"radio\" name=\"" + name + "\" value=\"" + value.v + "\"> " + value.descr;
-                            }
-                        } catch (err) {
-                            _didIteratorError6 = true;
-                            _iteratorError6 = err;
-                        } finally {
-                            try {
-                                if (!_iteratorNormalCompletion6 && _iterator6.return) {
-                                    _iterator6.return();
-                                }
-                            } finally {
-                                if (_didIteratorError6) {
-                                    throw _iteratorError6;
-                                }
-                            }
-                        }
-                    }
-                }
-            } catch (err) {
-                _didIteratorError5 = true;
-                _iteratorError5 = err;
-            } finally {
-                try {
-                    if (!_iteratorNormalCompletion5 && _iterator5.return) {
-                        _iterator5.return();
-                    }
-                } finally {
-                    if (_didIteratorError5) {
-                        throw _iteratorError5;
-                    }
-                }
-            }
-
-            html += '</div>';
+            html += "<div id=" + tab.id + " class=\"tab\">" + tab.name + "</div>";
         }
     } catch (err) {
         _didIteratorError3 = true;
@@ -245,25 +194,161 @@ function openMistaScriptOptions() {
         }
     }
 
-    html += "<div>\u041F\u043E\u0441\u043B\u0435 \u043F\u0440\u0438\u043C\u0435\u043D\u0435\u043D\u0438\u044F \u043D\u0430\u0441\u0442\u0440\u043E\u0435\u043A \u0441\u0442\u0440\u0430\u043D\u0438\u0446\u0443 \u043D\u0443\u0436\u043D\u043E \u043F\u0435\u0440\u0435\u0437\u0430\u0433\u0440\u0443\u0437\u0438\u0442\u044C</div>\n             <div>\n                  <button id=\"applyOptions\" class=\"sendbutton\" style=\"margin: 5px\">OK</button>\n                  <button id=\"cancelOptions\" class=\"sendbutton\" style=\"margin: 5px; float: left;\">\u041E\u0442\u043C\u0435\u043D\u0430</button>\n                  <button id=\"defaultOptions\" class=\"sendbutton\" style=\"margin: 5px; float: right;\">\u0421\u0431\u0440\u043E\u0441\u0438\u0442\u044C \u043D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0438</button>\n             </div>\n        </div>";
+    html += "</div>\n             <div id=\"tab_content\" style=\"padding:5px\">";
+
+    var _iteratorNormalCompletion4 = true;
+    var _didIteratorError4 = false;
+    var _iteratorError4 = undefined;
+
+    try {
+        for (var _iterator4 = formOptions[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
+            var _tab = _step4.value;
+
+
+            html += "<div id=\"" + _tab.id + "_cont\" class=\"tab-cont\">";
+
+            var _iteratorNormalCompletion6 = true;
+            var _didIteratorError6 = false;
+            var _iteratorError6 = undefined;
+
+            try {
+                for (var _iterator6 = _tab.rows[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
+                    var row = _step6.value;
+
+
+                    //html += '<div style="margin-bottom:5px">';
+                    html += '<div>';
+
+                    var _iteratorNormalCompletion7 = true;
+                    var _didIteratorError7 = false;
+                    var _iteratorError7 = undefined;
+
+                    try {
+                        for (var _iterator7 = row[Symbol.iterator](), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
+                            var name = _step7.value;
+
+
+                            var option = options.get(name);
+
+                            if (option.type === 'checkbox') {
+                                html += "<input id=\"" + name + "\" type=\"checkbox\" name=\"" + name + "\">\n                         <label for=\"" + name + "\">" + option.label + "</label>";
+                            } else if (option.type === 'input' || option.type === 'color') {
+                                if (option.label) {
+                                    html += "<label for=\"" + name + "\">" + option.label + "</label>";
+                                }
+                                var typeColor = option.type === 'color' ? ' type="color"' : '';
+                                html += "<input id=\"" + name + "\" name=\"" + name + "\" style=\"margin-left:5px; width: " + option.width + "px\" " + typeColor + ">";
+                                if (option.suffix) {
+                                    html += ' ' + option.suffix;
+                                }
+                            } else if (option.type === 'radio') {
+                                html += "<label for=\"" + name + "\">" + option.label + "</label><br>";
+                                var _iteratorNormalCompletion8 = true;
+                                var _didIteratorError8 = false;
+                                var _iteratorError8 = undefined;
+
+                                try {
+                                    for (var _iterator8 = option.values[Symbol.iterator](), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
+                                        var value = _step8.value;
+
+                                        html += "<input type=\"radio\" name=\"" + name + "\" value=\"" + value.v + "\"> " + value.descr;
+                                    }
+                                } catch (err) {
+                                    _didIteratorError8 = true;
+                                    _iteratorError8 = err;
+                                } finally {
+                                    try {
+                                        if (!_iteratorNormalCompletion8 && _iterator8.return) {
+                                            _iterator8.return();
+                                        }
+                                    } finally {
+                                        if (_didIteratorError8) {
+                                            throw _iteratorError8;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    } catch (err) {
+                        _didIteratorError7 = true;
+                        _iteratorError7 = err;
+                    } finally {
+                        try {
+                            if (!_iteratorNormalCompletion7 && _iterator7.return) {
+                                _iterator7.return();
+                            }
+                        } finally {
+                            if (_didIteratorError7) {
+                                throw _iteratorError7;
+                            }
+                        }
+                    }
+
+                    html += '</div>';
+                }
+            } catch (err) {
+                _didIteratorError6 = true;
+                _iteratorError6 = err;
+            } finally {
+                try {
+                    if (!_iteratorNormalCompletion6 && _iterator6.return) {
+                        _iterator6.return();
+                    }
+                } finally {
+                    if (_didIteratorError6) {
+                        throw _iteratorError6;
+                    }
+                }
+            }
+
+            html += '</div>';
+        }
+    } catch (err) {
+        _didIteratorError4 = true;
+        _iteratorError4 = err;
+    } finally {
+        try {
+            if (!_iteratorNormalCompletion4 && _iterator4.return) {
+                _iterator4.return();
+            }
+        } finally {
+            if (_didIteratorError4) {
+                throw _iteratorError4;
+            }
+        }
+    }
+
+    html += "</div>\n        <div id=\"options-footer\" class=\"options-footer\">\n           <div style=\"margin-left:15px;\">\u041F\u043E\u0441\u043B\u0435 \u043F\u0440\u0438\u043C\u0435\u043D\u0435\u043D\u0438\u044F \u043D\u0430\u0441\u0442\u0440\u043E\u0435\u043A \u0441\u0442\u0440\u0430\u043D\u0438\u0446\u0443 \u043D\u0443\u0436\u043D\u043E \u043F\u0435\u0440\u0435\u0437\u0430\u0433\u0440\u0443\u0437\u0438\u0442\u044C</div>\n           <div style=\"margin:10px\">\n              <button id=\"applyOptions\" class=\"sendbutton\" style=\"margin: 5px\">OK</button>\n              <button id=\"cancelOptions\" class=\"sendbutton\" style=\"margin: 5px; float: left;\">\u041E\u0442\u043C\u0435\u043D\u0430</button>\n              <button id=\"defaultOptions\" class=\"sendbutton\" style=\"margin: 5px; float: right;\">\u0421\u0431\u0440\u043E\u0441\u0438\u0442\u044C \u043D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0438</button>\n           </div>\n           </div>\n        </div>";
 
     $(html).appendTo('#body');
-    $('#mista-script').draggable();
+    //$('#mista-script').draggable();
     $('body').css({ "overflow-y": "hidden" });
 
+    var tabId = formOptions[0].id;
+    $("#" + tabId).addClass('active');
+    $("#" + tabId + "_cont").addClass('active');
+
+    $('.tab').on("click", function () {
+        $(".tab").removeClass('active');
+        $(".tab-cont").removeClass('active');
+        $(this).addClass("active");
+
+        var id = $(this).attr('id');
+        $("#" + id + "_cont").addClass("active");
+    });
     loadOptions();
 
     $('#applyOptions').click(function () {
-        var _iteratorNormalCompletion4 = true;
-        var _didIteratorError4 = false;
-        var _iteratorError4 = undefined;
+        var _iteratorNormalCompletion5 = true;
+        var _didIteratorError5 = false;
+        var _iteratorError5 = undefined;
 
         try {
 
-            for (var _iterator4 = options[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
-                var _step4$value = _slicedToArray(_step4.value, 2),
-                    name = _step4$value[0],
-                    option = _step4$value[1];
+            for (var _iterator5 = options[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
+                var _step5$value = _slicedToArray(_step5.value, 2),
+                    name = _step5$value[0],
+                    option = _step5$value[1];
 
                 if (option.type === 'checkbox') {
                     option.value = String($("#" + name).is(':checked'));
@@ -278,16 +363,16 @@ function openMistaScriptOptions() {
                 saveOption(name, option.value);
             }
         } catch (err) {
-            _didIteratorError4 = true;
-            _iteratorError4 = err;
+            _didIteratorError5 = true;
+            _iteratorError5 = err;
         } finally {
             try {
-                if (!_iteratorNormalCompletion4 && _iterator4.return) {
-                    _iterator4.return();
+                if (!_iteratorNormalCompletion5 && _iterator5.return) {
+                    _iterator5.return();
                 }
             } finally {
-                if (_didIteratorError4) {
-                    throw _iteratorError4;
+                if (_didIteratorError5) {
+                    throw _iteratorError5;
                 }
             }
         }
@@ -311,7 +396,7 @@ function openMistaScriptOptions() {
 // ----------------Tooltips-------------------------------------
 function tooltipHtml(msgId) {
     //min-width: 500px; width:auto; max-width: 1200px
-    var html = "<div id=\"tooltip_id" + msgId + "\" msg-id=\"" + msgId + "\" class=\"gensmall\" style=\"position:absolute; background:#FFFFE1; border:1px solid #000000; width:650px; font-weight:normal;\">\n        <div id=\"tooltip-header" + msgId + "\" msg-id=\"" + msgId + "\" style=\"cursor: move; background:white; padding:4px; border-bottom:1px solid silver\"><span><b>\u041F\u043E\u0434\u043E\u0436\u0434\u0438\u0442\u0435...</b></span></div>\n        <div id=\"tooltip-text" + msgId + "\" msg-id=\"" + msgId + "\" style=\"padding:4px; word-break:break-word;\"><span>\u0418\u0434\u0435\u0442 ajax \u0437\u0430\u0433\u0440\u0443\u0437\u043A\u0430.<br/>\u042D\u0442\u043E \u043C\u043E\u0436\u0435\u0442 \u0437\u0430\u043D\u044F\u0442\u044C \u043D\u0435\u043A\u043E\u0442\u043E\u0440\u043E\u0435 \u0432\u0440\u0435\u043C\u044F.</span></div>\n        <span id=\"tooltip-close" + msgId + "\" msg-id=\"" + msgId + "\" style=\"POSITION: absolute; RIGHT: 6px; TOP: 3px; cursor:hand; cursor:pointer\">\n            <b> x </b>\n        </span>\n    </div>";
+    var html = "<div id=\"tooltip_id" + msgId + "\" msg-id=\"" + msgId + "\" class=\"gensmall\" style=\"position:absolute; background:#FFFFE1; border:1px solid #000000; width:650px; font-weight:normal;\">\n        <div id=\"tooltip-header" + msgId + "\" msg-id=\"" + msgId + "\" class=\"tooltip-header\">\n            <span><b>\u041F\u043E\u0434\u043E\u0436\u0434\u0438\u0442\u0435...</b></span>\n        </div>\n        <div id=\"tooltip-text" + msgId + "\" msg-id=\"" + msgId + "\" class=\"tooltip-text\">\n            <span>\u0418\u0434\u0435\u0442 ajax \u0437\u0430\u0433\u0440\u0443\u0437\u043A\u0430.<br/>\u042D\u0442\u043E \u043C\u043E\u0436\u0435\u0442 \u0437\u0430\u043D\u044F\u0442\u044C \u043D\u0435\u043A\u043E\u0442\u043E\u0440\u043E\u0435 \u0432\u0440\u0435\u043C\u044F.</span>\n        </div>\n        <span id=\"tooltip-close" + msgId + "\" msg-id=\"" + msgId + "\" class=\"close-button\">\n            <b> x </b>\n        </span>\n    </div>";
     return html;
 }
 
@@ -687,23 +772,22 @@ function processLinkToUser(element, url, userPostMap, onlyBindEvents) {
 
     if (options.get('show-userpics').value === 'onMouseOver' || !parentId) {
         var user = $(element).text();
-        attachTooltip(element, '_p', '', loadDataImg({ img: imgUrl }, '_p', user));
+        attachTooltip(element, "_p" + userId, '', loadDataImg({ img: imgUrl }, "_p" + userId, user));
     } else {
         if (!onlyBindEvents) {
-            if (parentId) {
-                var msgId = +parentId.replace('tduser', '');
-                if (userPostMap[msgId - 1] !== userId) {
 
-                    var img = $("<img src=\"" + imgUrl + "\" style=\"max-width: " + options.get('max-userpic-width').value + "px; height: auto\"><br>").insertBefore($(element));
-                    img.on('load', function () {
-                        // Delete empty image to remove empty space
-                        if ($(this).height() === 1) {
-                            img.remove();
-                        }
-                    });
-                }
-                userPostMap[msgId] = userId;
+            var msgId = +parentId.replace('tduser', '');
+            if (userPostMap[msgId - 1] !== userId) {
+
+                var img = $("<img src=\"" + imgUrl + "\" style=\"max-width: " + options.get('max-userpic-width').value + "px; height: auto\"><br>").insertBefore($(element));
+                img.on('load', function () {
+                    // Delete empty image to remove empty space
+                    if ($(this).height() === 1) {
+                        img.remove();
+                    }
+                });
             }
+            userPostMap[msgId] = userId;
         }
     }
 
@@ -773,7 +857,8 @@ function run(parentElemHeader, parentElemText, onlyBindEvents) {
                 var url = $(this).next().find('a:first()').attr("href") + "&p=last20#F";
                 var link = $("<a href=\"" + url + "\" style=\"color: black\">" + text + "</a>").appendTo($(this));
                 if (options.get('open-in-new_window').value === 'true') link.prop("target", "_blank");
-                processLinkToPost(link, url, true, true);
+                var scroll = options.get('scroll-tooltip-on-main').value === 'true';
+                processLinkToPost(link, url, true, scroll);
             });
         }
         if (options.get('open-in-new_window').value === 'true') {
@@ -876,6 +961,9 @@ function addUserAutocomplete() {
         var elemText = $(this).find('td[id^=tdmsg]');
         run(elemHeader, elemText);
     });
+
+    // style  for options form & tooltips
+    $("<style>").prop("type", "text/css").html(".tabs:after{\n\t\t     content: \"\";\n\t\t     display: block;\n\t\t     clear: both;\n\t\t     height: 0;\n       \t}\n\t\t.tabs{\n\t\t\t border-right: none;\n             background-color: #eee;\n             border-bottom: solid 1px silver;\n\t\t}\n        .tab {\n\t\t\t float: left;\n\t\t\t cursor: pointer;\n             background-color: #eee;\n             margin-top: 3px;\n             border-radius: 10px 10px 0px 0px;\n             border-left: solid 1px grey;\n             border-top: solid 1px grey;\n\t\t \t padding: 10px 20px;\n        }\n\t\t.tab:first-child{\n             margin-left: 10px;\n\t\t}\n\t\t.tab:last-child{\n             border-right: solid 1px grey;\n\t\t}\n        .tab.active{\n             background-color: #FFFFE1;\n             border-bottom:  solid 1px #FFFFE1;\n             margin-bottom: -1px;\n\t\t}\n        .tab-cont > div{\n            margin-bottom:5px;\n        }\n\t\t.tab-cont{\n\t\t\tdisplay: none;\n\t\t    padding: 5px 5px;\n\t\t}\n\t\t.tab-cont.active{\n\t\t    display: block;\n\t\t}\n\n        .options-form {\n            position:fixed;\n            left: 50%;\n            top: 50%;\n            transform: translate(-50%, -50%);\n            background:#FFFFE1;\n            border:1px solid #000000;\n            width:630px;\n            min-height: 400px;\n            font-weight:normal;\n            z-index: 1001;\n        }\n        .options-form-overlay {\n            position: absolute;\n            top: 0;\n            left: 0;\n            width: 100%;\n            height: 100%;\n            background-color: #000;\n            opacity: 0.85;\n            z-index:1000;\n            pointer-events: none;\n        }\n        .options-header {\n            cursor: move;\n            background:white;\n            padding:4px;\n            border-bottom:1px solid silver;\n        }\n        .options-footer {\n            position: absolute;\n            bottom: 0px;\n            width: 100%;\n        }\n        .tooltip-header{\n            cursor: move;\n            background:white;\n            padding:4px;\n            border-bottom:1px solid silver;\n        }\n        .tooltip-text{\n            padding:4px;\n            word-break:break-word;\n        }\n        .close-button{\n            display: block;\n            position: absolute;\n            right: 6px;\n            top: 3px;\n            cursor:pointer;\n        }").appendTo("head");
 
     if (typeof $.ui == 'undefined') {
 
