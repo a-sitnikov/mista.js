@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         mista.ru
 // @namespace    http://tampermonkey.net/
-// @version      1.6.0
+// @version      1.6.1
 // @description  Make mista great again!
 // @author       acsent
 // @match        *.mista.ru/*
@@ -13,7 +13,7 @@
 // @updateURL    https://cdn.jsdelivr.net/gh/a-sitnikov/mista.js@latest/user.js
 // ==/UserScript==
 
-const mistaScriptVersion = '1.6.0';
+const mistaScriptVersion = '1.6.1';
 let tooltipsOrder = [];
 let tooltipsMap = {};
 let currentTopicId = 0;
@@ -240,11 +240,11 @@ function openMistaScriptOptions(){
     html +=
        `</div>
         <div id="options-footer" class="options-footer">
-           <div style="margin-left:15px;">После применения настроек страницу нужно перезагрузить</div>
-           <div style="margin:10px">
-              <button id="applyOptions" class="sendbutton" style="margin: 5px">OK</button>
-              <button id="cancelOptions" class="sendbutton" style="margin: 5px; float: left;">Отмена</button>
-              <button id="defaultOptions" class="sendbutton" style="margin: 5px; float: right;">Сбросить настройки</button>
+           <div style="margin: 0px 0px 5px 10px;">После применения настроек страницу нужно перезагрузить</div>
+           <div style="padding: 5px 10px 5px 10px; border-top: 1px solid silver; background-color:#eee">
+              <button id="applyOptions" class="sendbutton" style="margin: 5px; height: 30px">OK</button>
+              <button id="cancelOptions" class="sendbutton" style="margin: 5px; float: left;height: 30px">Отмена</button>
+              <button id="defaultOptions" class="sendbutton" style="margin: 5px; float: right; height: 30px">Сбросить настройки</button>
            </div>
            </div>
         </div>`;
@@ -413,13 +413,23 @@ function loadDataMsg(topicId, msgId){
 }
 
 function createTooltip(link, msgId, topicId, scroll) {
-    if ($(`#tooltip_id${msgId}`).length > 0) return;
-    $(tooltipHtml(msgId)).appendTo('#body');
+
     let loc = $(link).offset();
     let left = loc.left;
     if ($(window).width() - loc.left < 100) {
         left = left - 630;
     }
+
+    let tooltip = $(`#tooltip_id${msgId}`);
+    if (tooltip.length > 0) {
+        tooltip.css({
+            "top": loc.top + "px",
+            "left": left + "px"
+            //"z-index": "999"
+         });
+        return;
+    }
+    $(tooltipHtml(msgId)).appendTo('#body');
 
     let elem = $(`#tooltip_id${msgId}`)
         .draggable()
