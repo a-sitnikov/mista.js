@@ -5,7 +5,7 @@ var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = [
 // ==UserScript==
 // @name         mista.ru
 // @namespace    http://tampermonkey.net/
-// @version      1.5.5
+// @version      1.5.6
 // @description  Make mista great again!
 // @author       acsent
 // @match        *.mista.ru/*
@@ -17,7 +17,7 @@ var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = [
 // @updateURL    https://cdn.jsdelivr.net/gh/a-sitnikov/mista.js@latest/user.js
 // ==/UserScript==
 
-var mistaScriptVersion = '1.5.5';
+var mistaScriptVersion = '1.5.6';
 var tooltipsOrder = [];
 var tooltipsMap = {};
 var currentTopicId = 0;
@@ -531,7 +531,10 @@ function getImgUrl(url) {
         img = url;
     } else if (url.search(/skrinshoter\.ru/i) !== -1) {
         img = url.replace(/\?a$/i, ".png");
+        if (img === url) img = url + ".png";
+
         altImg = url.replace(/\?a$/i, ".jpg");
+        if (altImg === url) altImg = url + ".jpg";
     } else if (url.search(/joxi\.ru/i) !== -1) {
         img = url + ".png";
         altImg = url + ".jpg";
@@ -664,10 +667,16 @@ function processLinkToUser(element, url, userPostMap, onlyBindEvents) {
 
     if (options.get('show-userpics').value === 'no') return;
     var userId = $(element).attr('data-user_id');
+    if (!userId) {
+        var arr = url.match(/users\.php\?id=(\d+)/);
+        if (arr.length >= 2) userId = arr[1];
+    }
     if (!userId) return;
 
     var userName = $(element).attr('data-user_name');
     userName = userName || $(element).text();
+
+    var parentId = $(element).parent().attr('id');
 
     var imgUrl = void 0;
     if (options.get('show-userpics').value === 'showThumbs') {
@@ -676,24 +685,25 @@ function processLinkToUser(element, url, userPostMap, onlyBindEvents) {
         imgUrl = "/users_photo/mid/" + userId + ".jpg";
     }
 
-    if (options.get('show-userpics').value === 'onMouseOver') {
+    if (options.get('show-userpics').value === 'onMouseOver' || !parentId) {
         var user = $(element).text();
         attachTooltip(element, '_p', '', loadDataImg({ img: imgUrl }, '_p', user));
     } else {
         if (!onlyBindEvents) {
+            if (parentId) {
+                var msgId = +parentId.replace('tduser', '');
+                if (userPostMap[msgId - 1] !== userId) {
 
-            var msgId = +$(element).parent().attr('id').replace('tduser', '');
-            if (userPostMap[msgId - 1] !== userId) {
-
-                var img = $("<img src=\"" + imgUrl + "\" style=\"max-width: " + options.get('max-userpic-width').value + "px; height: auto\"><br>").insertBefore($(element));
-                img.on('load', function () {
-                    // Delete empty image to remove empty space
-                    if ($(this).height() === 1) {
-                        img.remove();
-                    }
-                });
+                    var img = $("<img src=\"" + imgUrl + "\" style=\"max-width: " + options.get('max-userpic-width').value + "px; height: auto\"><br>").insertBefore($(element));
+                    img.on('load', function () {
+                        // Delete empty image to remove empty space
+                        if ($(this).height() === 1) {
+                            img.remove();
+                        }
+                    });
+                }
+                userPostMap[msgId] = userId;
             }
-            userPostMap[msgId] = userId;
         }
     }
 
@@ -773,7 +783,7 @@ function run(parentElemHeader, parentElemText, onlyBindEvents) {
         }
     }
 
-    parentElemHeader = parentElemHeader || $('td[id^=tduser]');
+    parentElemHeader = parentElemHeader || $('td[id^=tduser], li.whois-user');
     parentElemText = parentElemText || $('td[id^=tdmsg]');
 
     // Process all links in the user name area

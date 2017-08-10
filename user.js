@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         mista.ru
 // @namespace    http://tampermonkey.net/
-// @version      1.5.6
+// @version      1.5.7
 // @description  Make mista great again!
 // @author       acsent
 // @match        *.mista.ru/*
@@ -13,7 +13,7 @@
 // @updateURL    https://cdn.jsdelivr.net/gh/a-sitnikov/mista.js@latest/user.js
 // ==/UserScript==
 
-const mistaScriptVersion = '1.5.6';
+const mistaScriptVersion = '1.5.7';
 let tooltipsOrder = [];
 let tooltipsMap = {};
 let currentTopicId = 0;
@@ -46,29 +46,55 @@ let options = new Map([
     ["add-name-to-message",   {default: "true",        type: "checkbox", label: "Кнопка для ввода имени в сообщение"}],
     ["add-name-style",        {default: '{"font-size": "100%"}', type: "input",    label: "Стиль кнопки", width: "350", suffix: "любые свойства css"}],
     ["user-autocomplete",     {default: "true",        type: "checkbox", label: "Дополнение имен пользователей. При написании @"}],
-    ["fix-broken-links",      {default: "true",        type: "checkbox", label: "Чинить поломанные ссылки (с русскими символами)"}]
+    ["fix-broken-links",      {default: "true",        type: "checkbox", label: "Чинить поломанные ссылки (с русскими символами)"}],
+    ["scroll-tooltip-on-main", {default: "true",        type: "checkbox", label: "При скролле этотого тултипа переходить к след/пред сообщениям"}]
 ]);
 
 let formOptions = [
-    ['open-in-new_window'],
-    ['show-tooltips', 'tooltip-delay'],
-    ['remove-tooltip-on-leave', 'remove-tooltip-delay'],
-    ['show-tooltips-on-main'],
-    ['replace-catalog-to-is'],
-    ['first-post-tooltip'],
-    ['mark-author', 'author-color'],
-    ['mark-yourself', 'yourself-color'],
-    ['show-userpics'],
-    ['max-userpic-width'],
-    ['show-imgs'],
-    ['max-img-width'],
-    ['limit-embedded-img-width'],
-    ['show-youtube-title', 'max-youtube-title'],
-    ['youtube-prefix'],
-    ['add-name-to-message'],
-    ['add-name-style'],
-    ['user-autocomplete'],
-    ['fix-broken-links']
+    {
+        id: 'tab1',
+        name: 'Тултипы',
+        rows: [
+            ['show-tooltips', 'tooltip-delay'],
+            ['remove-tooltip-on-leave', 'remove-tooltip-delay'],
+            ['show-tooltips-on-main'],
+            ['scroll-tooltip-on-main'],
+            ['first-post-tooltip'],
+        ]
+    },
+    {
+        id: 'tab2',
+        name: 'Инфо',
+        rows: [
+            ['mark-author', 'author-color'],
+            ['mark-yourself', 'yourself-color'],
+            ['show-userpics'],
+            ['max-userpic-width'],
+            ['add-name-to-message'],
+            ['add-name-style']
+        ]
+    },
+    {
+        id: 'tab3',
+        name: 'Текст',
+        rows: [
+            ['show-imgs'],
+            ['max-img-width'],
+            ['limit-embedded-img-width'],
+            ['show-youtube-title', 'max-youtube-title'],
+            ['youtube-prefix'],
+            ['fix-broken-links'],
+            ['replace-catalog-to-is']
+        ]
+    },
+    {
+        id: 'tab4',
+        name: 'Прочее',
+        rows: [
+            ['open-in-new_window'],
+            ['user-autocomplete']
+        ]
+    }
 ];
 
 function utimeToDate(utime) {
@@ -154,60 +180,91 @@ function loadOptions(param){
 
 function openMistaScriptOptions(){
     let html =
-       `<div id="mista-script-overlay" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: #000; z-index:1000; opacity: 0.85"; pointer-events: none;></div>
-        <div id="mista-script" style="position:fixed; left: 25%; top: 15%; background:#FFFFE1; border:1px solid #000000; width:630px; font-weight:normal; z-index: 1001">
-             <span id="closeOptions" style="POSITION: absolute; RIGHT: 6px; TOP: 3px; cursor:hand; cursor:pointer">
+       `<div id="mista-script-overlay" class="options-form-overlay" ></div>
+        <div id="mista-script" class="options-form">
+             <span id="closeOptions" class="close-button">
                   <b> x </b>
              </span>
-             <div style="cursor: move; background:white; padding:4px; border-bottom:1px solid silver">
+             <div class="options-header" style="cursor: default">
                  <b>Настройки Mista.Script</b> version ${mistaScriptVersion}
              </div>
-             <div style="padding:5px">`;
+             <div class="tabs">`;
 
-    for (let row of formOptions){
-        html += '<div style="margin-bottom:5px">';
+    for (let tab of formOptions){
+        html += `<div id=${tab.id} class="tab">${tab.name}</div>`;
+    }
 
-        for (let name of row){
+    html += `</div>
+             <div id="tab_content" style="padding:5px">`;
 
-            let option = options.get(name);
+    for (let tab of formOptions){
 
-            if (option.type === 'checkbox') {
-                html +=
-                    `<input id="${name}" type="checkbox" name="${name}">
-                     <label for="${name}">${option.label}</label>`;
+        html += `<div id="${tab.id}_cont" class="tab-cont">`;
 
-            } else if (option.type === 'input' || option.type === 'color') {
-                if (option.label){
-                    html += `<label for="${name}">${option.label}</label>`;
-                }
-                let typeColor = (option.type === 'color' ? ' type="color"': '');
-                html += `<input id="${name}" name="${name}" style="margin-left:5px; width: ${option.width}px" ${typeColor}>`;
-                if (option.suffix){
-                    html += ' ' + option.suffix;
-                }
-            } else if (option.type === 'radio') {
-                html += `<label for="${name}">${option.label}</label><br>`;
-                for (let value of option.values){
-                    html += `<input type="radio" name="${name}" value="${value.v}"> ${value.descr}`;
+        for (let row of tab.rows){
+
+            //html += '<div style="margin-bottom:5px">';
+            html += '<div>';
+
+            for (let name of row){
+
+                let option = options.get(name);
+
+                if (option.type === 'checkbox') {
+                    html +=
+                        `<input id="${name}" type="checkbox" name="${name}">
+                         <label for="${name}">${option.label}</label>`;
+
+                } else if (option.type === 'input' || option.type === 'color') {
+                    if (option.label){
+                        html += `<label for="${name}">${option.label}</label>`;
+                    }
+                    let typeColor = (option.type === 'color' ? ' type="color"': '');
+                    html += `<input id="${name}" name="${name}" style="margin-left:5px; width: ${option.width}px" ${typeColor}>`;
+                    if (option.suffix){
+                        html += ' ' + option.suffix;
+                    }
+                } else if (option.type === 'radio') {
+                    html += `<label for="${name}">${option.label}</label><br>`;
+                    for (let value of option.values){
+                        html += `<input type="radio" name="${name}" value="${value.v}"> ${value.descr}`;
+                    }
                 }
             }
+
+            html += '</div>';
         }
 
         html += '</div>';
     }
     html +=
-       `<div>После применения настроек страницу нужно перезагрузить</div>
-             <div>
-                  <button id="applyOptions" class="sendbutton" style="margin: 5px">OK</button>
-                  <button id="cancelOptions" class="sendbutton" style="margin: 5px; float: left;">Отмена</button>
-                  <button id="defaultOptions" class="sendbutton" style="margin: 5px; float: right;">Сбросить настройки</button>
-             </div>
+       `</div>
+        <div id="options-footer" class="options-footer">
+           <div style="margin-left:15px;">После применения настроек страницу нужно перезагрузить</div>
+           <div style="margin:10px">
+              <button id="applyOptions" class="sendbutton" style="margin: 5px">OK</button>
+              <button id="cancelOptions" class="sendbutton" style="margin: 5px; float: left;">Отмена</button>
+              <button id="defaultOptions" class="sendbutton" style="margin: 5px; float: right;">Сбросить настройки</button>
+           </div>
+           </div>
         </div>`;
 
     $(html).appendTo('#body');
-    $('#mista-script').draggable();
+    //$('#mista-script').draggable();
     $('body').css({"overflow-y": "hidden"});
 
+    let tabId = formOptions[0].id;
+    $(`#${tabId}`).addClass('active');
+    $(`#${tabId}_cont`).addClass('active');
+
+    $('.tab').on("click", function() {
+        $(".tab").removeClass('active');
+        $(".tab-cont").removeClass('active');
+        $(this).addClass("active");
+
+        let id = $(this).attr('id');
+        $(`#${id}_cont`).addClass("active");
+    });
     loadOptions();
 
     $('#applyOptions').click(function(){
@@ -251,9 +308,13 @@ function tooltipHtml(msgId) {
     //min-width: 500px; width:auto; max-width: 1200px
     let html =
     `<div id="tooltip_id${msgId}" msg-id="${msgId}" class="gensmall" style="position:absolute; background:#FFFFE1; border:1px solid #000000; width:650px; font-weight:normal;">
-        <div id="tooltip-header${msgId}" msg-id="${msgId}" style="cursor: move; background:white; padding:4px; border-bottom:1px solid silver"><span><b>Подождите...</b></span></div>
-        <div id="tooltip-text${msgId}" msg-id="${msgId}" style="padding:4px; word-break:break-word;"><span>Идет ajax загрузка.<br/>Это может занять некоторое время.</span></div>
-        <span id="tooltip-close${msgId}" msg-id="${msgId}" style="POSITION: absolute; RIGHT: 6px; TOP: 3px; cursor:hand; cursor:pointer">
+        <div id="tooltip-header${msgId}" msg-id="${msgId}" class="tooltip-header">
+            <span><b>Подождите...</b></span>
+        </div>
+        <div id="tooltip-text${msgId}" msg-id="${msgId}" class="tooltip-text">
+            <span>Идет ajax загрузка.<br/>Это может занять некоторое время.</span>
+        </div>
+        <span id="tooltip-close${msgId}" msg-id="${msgId}" class="close-button">
             <b> x </b>
         </span>
     </div>`;
@@ -652,24 +713,23 @@ function processLinkToUser(element, url, userPostMap, onlyBindEvents) {
 
     if (options.get('show-userpics').value === 'onMouseOver' || !parentId) {
         let user = $(element).text();
-        attachTooltip(element, '_p', '', loadDataImg({img: imgUrl}, '_p', user));
+        attachTooltip(element, `_p${userId}`, '', loadDataImg({img: imgUrl}, `_p${userId}`, user));
 
     } else {
         if (!onlyBindEvents) {
-            if (parentId) {
-                let msgId = +parentId.replace('tduser', '');
-                if (userPostMap[msgId - 1] !== userId) {
 
-                    let img = $(`<img src="${imgUrl}" style="max-width: ${options.get('max-userpic-width').value}px; height: auto"><br>`).insertBefore($(element));
-                    img.on('load', function(){
-                        // Delete empty image to remove empty space
-                        if ($(this).height() === 1) {
-                            img.remove();
-                        }
-                    });
-                }
-                userPostMap[msgId] = userId;
+            let msgId = +parentId.replace('tduser', '');
+            if (userPostMap[msgId - 1] !== userId) {
+
+                let img = $(`<img src="${imgUrl}" style="max-width: ${options.get('max-userpic-width').value}px; height: auto"><br>`).insertBefore($(element));
+                img.on('load', function(){
+                    // Delete empty image to remove empty space
+                    if ($(this).height() === 1) {
+                        img.remove();
+                    }
+                });
             }
+            userPostMap[msgId] = userId;
         }
     }
 
@@ -742,7 +802,8 @@ function run(parentElemHeader, parentElemText, onlyBindEvents){
                 let url = $(this).next().find('a:first()').attr("href") + "&p=last20#F";
                 let link = $(`<a href="${url}" style="color: black">${text}</a>`).appendTo($(this));
                 if (options.get('open-in-new_window').value === 'true') link.prop("target", "_blank");
-                processLinkToPost(link, url, true, true);
+                let scroll = options.get('scroll-tooltip-on-main').value === 'true';
+                processLinkToPost(link, url, true, scroll);
             });
         }
         if (options.get('open-in-new_window').value === 'true') {
@@ -879,6 +940,106 @@ function addUserAutocomplete(){
         let elemText = $(this).find('td[id^=tdmsg]');
         run(elemHeader, elemText);
     });
+
+    // style  for options form & tooltips
+    $("<style>")
+    .prop("type", "text/css")
+    .html(
+        `.tabs:after{
+		     content: "";
+		     display: block;
+		     clear: both;
+		     height: 0;
+       	}
+		.tabs{
+			 border-right: none;
+             background-color: #eee;
+             border-bottom: solid 1px silver;
+		}
+        .tab {
+			 float: left;
+			 cursor: pointer;
+             background-color: #eee;
+             margin-top: 3px;
+             border-radius: 10px 10px 0px 0px;
+             border-left: solid 1px grey;
+             border-top: solid 1px grey;
+		 	 padding: 10px 20px;
+        }
+		.tab:first-child{
+             margin-left: 10px;
+		}
+		.tab:last-child{
+             border-right: solid 1px grey;
+		}
+        .tab.active{
+             background-color: #FFFFE1;
+             border-bottom:  solid 1px #FFFFE1;
+             margin-bottom: -1px;
+		}
+        .tab-cont > div{
+            margin-bottom:5px;
+        }
+		.tab-cont{
+			display: none;
+		    padding: 5px 5px;
+		}
+		.tab-cont.active{
+		    display: block;
+		}
+
+        .options-form {
+            position:fixed;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            background:#FFFFE1;
+            border:1px solid #000000;
+            width:630px;
+            min-height: 400px;
+            font-weight:normal;
+            z-index: 1001;
+        }
+        .options-form-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000;
+            opacity: 0.85;
+            z-index:1000;
+            pointer-events: none;
+        }
+        .options-header {
+            cursor: move;
+            background:white;
+            padding:4px;
+            border-bottom:1px solid silver;
+        }
+        .options-footer {
+            position: absolute;
+            bottom: 0px;
+            width: 100%;
+        }
+        .tooltip-header{
+            cursor: move;
+            background:white;
+            padding:4px;
+            border-bottom:1px solid silver;
+        }
+        .tooltip-text{
+            padding:4px;
+            word-break:break-word;
+        }
+        .close-button{
+            display: block;
+            position: absolute;
+            right: 6px;
+            top: 3px;
+            cursor:pointer;
+        }`)
+    .appendTo("head");
 
     if (typeof $.ui == 'undefined') {
 
