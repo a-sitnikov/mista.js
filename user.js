@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         mista.ru
 // @namespace    http://tampermonkey.net/
-// @version      1.6.1
+// @version      1.7.0
 // @description  Make mista great again!
 // @author       acsent
 // @match        *.mista.ru/*
@@ -13,7 +13,7 @@
 // @updateURL    https://cdn.jsdelivr.net/gh/a-sitnikov/mista.js@latest/user.js
 // ==/UserScript==
 
-const mistaScriptVersion = '1.6.1';
+const mistaScriptVersion = '1.7.0';
 let tooltipsOrder = [];
 let tooltipsMap = {};
 let currentTopicId = 0;
@@ -47,7 +47,9 @@ let options = new Map([
     ["add-name-style",        {default: '{"font-size": "100%"}', type: "input",    label: "Стиль кнопки", width: "350", suffix: "любые свойства css"}],
     ["user-autocomplete",     {default: "true",        type: "checkbox", label: "Дополнение имен пользователей. При написании @"}],
     ["fix-broken-links",      {default: "true",        type: "checkbox", label: "Чинить поломанные ссылки (с русскими символами)"}],
-    ["scroll-tooltip-on-main", {default: "true",        type: "checkbox", label: "При скролле этотого тултипа переходить к след/пред сообщениям"}]
+    ["scroll-tooltip-on-main", {default: "true",       type: "checkbox", label: "При скролле этотого тултипа переходить к след/пред сообщениям"}],
+    ["use-ignore",            {default: "false",       type: "checkbox", label: "Игнорировать следующих пользователей (имена через запятую)"}],
+    ["ignore-list",           {default: "",            type: "input",    label: "", width: "550"}]
 ]);
 
 let formOptions = [
@@ -92,7 +94,9 @@ let formOptions = [
         name: 'Прочее',
         rows: [
             ['open-in-new_window'],
-            ['user-autocomplete']
+            ['user-autocomplete'],
+            ['use-ignore'],
+            ['ignore-list']
         ]
     }
 ];
@@ -924,6 +928,16 @@ function addUserAutocomplete(){
     });
 }
 
+function hideIgnored() {
+
+    if (options.get('use-ignore').value !== 'true') return;
+
+    let userIds = options.get('ignore-list').value.split(',').map((val) => val.trim());
+    let selector = "[data-user_name='" + userIds.join("'],[data-user_name='") + "']";
+    $(selector, 'tr[id^=message]').parent().parent().hide();
+
+}
+
 (function() {
 
     let currentUrl = window.location.href;
@@ -976,7 +990,7 @@ function addUserAutocomplete(){
              border-top: solid 1px grey;
 		 	 padding: 10px 20px;
         }
-		.tab:first-child{
+        .tab:first-child{
              margin-left: 10px;
 		}
 		.tab:last-child{
@@ -984,7 +998,7 @@ function addUserAutocomplete(){
 		}
         .tab.active{
              background-color: #FFFFE1;
-             border-bottom:  solid 1px #FFFFE1;
+             border-bottom:  solid 1px transparent;
              margin-bottom: -1px;
 		}
         .tab-cont > div{
@@ -1060,11 +1074,13 @@ function addUserAutocomplete(){
                 $( deferred.resolve );
             })
         ).done(function(){
+            hideIgnored();
             addUserAutocomplete();
             run();
         });
 
     } else {
+        hideIgnored();
         addUserAutocomplete();
         run();
     }
