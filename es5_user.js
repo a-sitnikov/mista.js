@@ -5,7 +5,7 @@ var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = [
 // ==UserScript==
 // @name         mista.ru
 // @namespace    http://tampermonkey.net/
-// @version      1.6.1
+// @version      1.7.0
 // @description  Make mista great again!
 // @author       acsent
 // @match        *.mista.ru/*
@@ -17,7 +17,7 @@ var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = [
 // @updateURL    https://cdn.jsdelivr.net/gh/a-sitnikov/mista.js@latest/user.js
 // ==/UserScript==
 
-var mistaScriptVersion = '1.6.1';
+var mistaScriptVersion = '1.7.0';
 var tooltipsOrder = [];
 var tooltipsMap = {};
 var currentTopicId = 0;
@@ -26,7 +26,7 @@ var topicAuthor = void 0;
 
 var options = new Map([["open-in-new_window", { default: "true", type: "checkbox", label: "Открывать ветки в новом окне" }], ["show-tooltips", { default: "true", type: "checkbox", label: "Показывать тултипы, задержка" }], ["show-tooltips-on-main", { default: "true", type: "checkbox", label: "Показывать тултипы на главной странице, при наведении на кол-во ответов " }], ["tooltip-delay", { default: "500", type: "input", label: "", suffix: "мс", width: "50" }], ["remove-tooltip-on-leave", { default: "false", type: "checkbox", label: "Скрывать тултип при уходе мыши, задержка" }], ["remove-tooltip-delay", { default: "1000", type: "input", label: "", suffix: "мс", width: "50" }], ["replace-catalog-to-is", { default: "true", type: "checkbox", label: "Обратно заменять catalog.mista.ru на infostart.ru" }], ["mark-author", { default: "true", type: "checkbox", label: "Подсвечивать автора цветом" }], ["author-color", { default: "#ffd784", type: "color", label: "", width: "100" }], ["mark-yourself", { default: "true", type: "checkbox", label: "Подсвечивать себя цветом" }], ["yourself-color", { default: "#9bc5ef", type: "color", label: "", width: "100" }], ["show-userpics", { default: "onMouseOver", type: "radio", label: "Показывать фото пользователей",
     values: [{ v: "showAlways", descr: "Показывать всегда" }, { v: "showThumbs", descr: "Показывать thumbs" }, { v: "onMouseOver", descr: "При наведении" }, { v: "no", descr: "Не показывать" }] }], ["max-userpic-width", { default: "100", type: "input", label: "Макс. ширина фото", suffix: "px. Желательно не более 150", width: "50" }], ["show-imgs", { default: "onMouseOver", type: "radio", label: "Показывать картинки",
-    values: [{ v: "showAlways", descr: "Показывать всегда" }, { v: "onMouseOver", descr: "При наведении" }, { v: "no", descr: "Не показывать" }] }], ["max-img-width", { default: "500", type: "input", label: "Макс. ширина картинки", suffix: "px", width: "50" }], ["limit-embedded-img-width", { default: "true", type: "checkbox", label: "Ограничивать ширину вставленных изображений" }], ["show-youtube-title", { default: "true", type: "checkbox", label: "Показывать наименования роликов youtube, макс. длина" }], ["max-youtube-title", { default: "40", type: "input", label: "", suffix: "символов", width: "50" }], ["youtube-prefix", { default: "youtube", type: "input", label: "Префикс youtube", suffix: "", width: "100" }], ["first-post-tooltip", { default: "true", type: "checkbox", label: "Отображать тултип нулевого поста ссыки на другую ветку" }], ["add-name-to-message", { default: "true", type: "checkbox", label: "Кнопка для ввода имени в сообщение" }], ["add-name-style", { default: '{"font-size": "100%"}', type: "input", label: "Стиль кнопки", width: "350", suffix: "любые свойства css" }], ["user-autocomplete", { default: "true", type: "checkbox", label: "Дополнение имен пользователей. При написании @" }], ["fix-broken-links", { default: "true", type: "checkbox", label: "Чинить поломанные ссылки (с русскими символами)" }], ["scroll-tooltip-on-main", { default: "true", type: "checkbox", label: "При скролле этотого тултипа переходить к след/пред сообщениям" }]]);
+    values: [{ v: "showAlways", descr: "Показывать всегда" }, { v: "onMouseOver", descr: "При наведении" }, { v: "no", descr: "Не показывать" }] }], ["max-img-width", { default: "500", type: "input", label: "Макс. ширина картинки", suffix: "px", width: "50" }], ["limit-embedded-img-width", { default: "true", type: "checkbox", label: "Ограничивать ширину вставленных изображений" }], ["show-youtube-title", { default: "true", type: "checkbox", label: "Показывать наименования роликов youtube, макс. длина" }], ["max-youtube-title", { default: "40", type: "input", label: "", suffix: "символов", width: "50" }], ["youtube-prefix", { default: "youtube", type: "input", label: "Префикс youtube", suffix: "", width: "100" }], ["first-post-tooltip", { default: "true", type: "checkbox", label: "Отображать тултип нулевого поста ссыки на другую ветку" }], ["add-name-to-message", { default: "true", type: "checkbox", label: "Кнопка для ввода имени в сообщение" }], ["add-name-style", { default: '{"font-size": "100%"}', type: "input", label: "Стиль кнопки", width: "350", suffix: "любые свойства css" }], ["user-autocomplete", { default: "true", type: "checkbox", label: "Дополнение имен пользователей. При написании @" }], ["fix-broken-links", { default: "true", type: "checkbox", label: "Чинить поломанные ссылки (с русскими символами)" }], ["scroll-tooltip-on-main", { default: "true", type: "checkbox", label: "При скролле этотого тултипа переходить к след/пред сообщениям" }], ["use-ignore", { default: "false", type: "checkbox", label: "Игнорировать следующих пользователей (имена через запятую)" }], ["ignore-list", { default: "", type: "input", label: "", width: "550" }]]);
 
 var formOptions = [{
     id: 'tab1',
@@ -43,7 +43,7 @@ var formOptions = [{
 }, {
     id: 'tab4',
     name: 'Прочее',
-    rows: [['open-in-new_window'], ['user-autocomplete']]
+    rows: [['open-in-new_window'], ['user-autocomplete'], ['use-ignore'], ['ignore-list']]
 }];
 
 function utimeToDate(utime) {
@@ -947,6 +947,17 @@ function addUserAutocomplete() {
     });
 }
 
+function hideIgnored() {
+
+    if (options.get('use-ignore').value !== 'true') return;
+
+    var userIds = options.get('ignore-list').value.split(',').map(function (val) {
+        return val.trim();
+    });
+    var selector = "[data-user_name='" + userIds.join("'],[data-user_name='") + "']";
+    $(selector, 'tr[id^=message]').parent().parent().hide();
+}
+
 (function () {
 
     var currentUrl = window.location.href;
@@ -973,17 +984,19 @@ function addUserAutocomplete() {
     });
 
     // style  for options form & tooltips
-    $("<style>").prop("type", "text/css").html(".tabs:after{\n\t\t     content: \"\";\n\t\t     display: block;\n\t\t     clear: both;\n\t\t     height: 0;\n       \t}\n\t\t.tabs{\n\t\t\t border-right: none;\n             background-color: #eee;\n             border-bottom: solid 1px silver;\n\t\t}\n        .tab {\n\t\t\t float: left;\n\t\t\t cursor: pointer;\n             background-color: #eee;\n             margin-top: 3px;\n             border-radius: 10px 10px 0px 0px;\n             border-left: solid 1px grey;\n             border-top: solid 1px grey;\n\t\t \t padding: 10px 20px;\n        }\n\t\t.tab:first-child{\n             margin-left: 10px;\n\t\t}\n\t\t.tab:last-child{\n             border-right: solid 1px grey;\n\t\t}\n        .tab.active{\n             background-color: #FFFFE1;\n             border-bottom:  solid 1px #FFFFE1;\n             margin-bottom: -1px;\n\t\t}\n        .tab-cont > div{\n            margin-bottom:5px;\n        }\n\t\t.tab-cont{\n\t\t\tdisplay: none;\n\t\t    padding: 5px 5px;\n\t\t}\n\t\t.tab-cont.active{\n\t\t    display: block;\n\t\t}\n\n        .options-form {\n            position:fixed;\n            left: 50%;\n            top: 50%;\n            transform: translate(-50%, -50%);\n            background:#FFFFE1;\n            border:1px solid #000000;\n            width:630px;\n            min-height: 400px;\n            font-weight:normal;\n            z-index: 1001;\n        }\n        .options-form-overlay {\n            position: absolute;\n            top: 0;\n            left: 0;\n            width: 100%;\n            height: 100%;\n            background-color: #000;\n            opacity: 0.85;\n            z-index:1000;\n            pointer-events: none;\n        }\n        .options-header {\n            cursor: move;\n            background:white;\n            padding:4px;\n            border-bottom:1px solid silver;\n        }\n        .options-footer {\n            position: absolute;\n            bottom: 0px;\n            width: 100%;\n        }\n        .tooltip-header{\n            cursor: move;\n            background:white;\n            padding:4px;\n            border-bottom:1px solid silver;\n        }\n        .tooltip-text{\n            padding:4px;\n            word-break:break-word;\n        }\n        .close-button{\n            display: block;\n            position: absolute;\n            right: 6px;\n            top: 3px;\n            cursor:pointer;\n        }").appendTo("head");
+    $("<style>").prop("type", "text/css").html(".tabs:after{\n\t\t     content: \"\";\n\t\t     display: block;\n\t\t     clear: both;\n\t\t     height: 0;\n       \t}\n\t\t.tabs{\n\t\t\t border-right: none;\n             background-color: #eee;\n             border-bottom: solid 1px silver;\n\t\t}\n        .tab {\n\t\t\t float: left;\n\t\t\t cursor: pointer;\n             background-color: #eee;\n             margin-top: 3px;\n             border-radius: 10px 10px 0px 0px;\n             border-left: solid 1px grey;\n             border-top: solid 1px grey;\n\t\t \t padding: 10px 20px;\n        }\n        .tab:first-child{\n             margin-left: 10px;\n\t\t}\n\t\t.tab:last-child{\n             border-right: solid 1px grey;\n\t\t}\n        .tab.active{\n             background-color: #FFFFE1;\n             border-bottom:  solid 1px transparent;\n             margin-bottom: -1px;\n\t\t}\n        .tab-cont > div{\n            margin-bottom:5px;\n        }\n\t\t.tab-cont{\n\t\t\tdisplay: none;\n\t\t    padding: 5px 5px;\n\t\t}\n\t\t.tab-cont.active{\n\t\t    display: block;\n\t\t}\n\n        .options-form {\n            position:fixed;\n            left: 50%;\n            top: 50%;\n            transform: translate(-50%, -50%);\n            background:#FFFFE1;\n            border:1px solid #000000;\n            width:630px;\n            min-height: 400px;\n            font-weight:normal;\n            z-index: 1001;\n        }\n        .options-form-overlay {\n            position: absolute;\n            top: 0;\n            left: 0;\n            width: 100%;\n            height: 100%;\n            background-color: #000;\n            opacity: 0.85;\n            z-index:1000;\n            pointer-events: none;\n        }\n        .options-header {\n            cursor: move;\n            background:white;\n            padding:4px;\n            border-bottom:1px solid silver;\n        }\n        .options-footer {\n            position: absolute;\n            bottom: 0px;\n            width: 100%;\n        }\n        .tooltip-header{\n            cursor: move;\n            background:white;\n            padding:4px;\n            border-bottom:1px solid silver;\n        }\n        .tooltip-text{\n            padding:4px;\n            word-break:break-word;\n        }\n        .close-button{\n            display: block;\n            position: absolute;\n            right: 6px;\n            top: 3px;\n            cursor:pointer;\n        }").appendTo("head");
 
     if (typeof $.ui == 'undefined') {
 
         $.when($.getScript('https://code.jquery.com/ui/1.12.1/jquery-ui.min.js'), $.getScript('https://cdn.jsdelivr.net/gh/yuku-t/jquery-textcomplete@latest/dist/jquery.textcomplete.min.js'), $.Deferred(function (deferred) {
             $(deferred.resolve);
         })).done(function () {
+            hideIgnored();
             addUserAutocomplete();
             run();
         });
     } else {
+        hideIgnored();
         addUserAutocomplete();
         run();
     }

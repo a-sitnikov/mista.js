@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         mista.ru
 // @namespace    http://tampermonkey.net/
-// @version      1.7.0
+// @version      1.7.1
 // @description  Make mista great again!
 // @author       acsent
 // @match        *.mista.ru/*
@@ -13,7 +13,7 @@
 // @updateURL    https://cdn.jsdelivr.net/gh/a-sitnikov/mista.js@latest/user.js
 // ==/UserScript==
 
-const mistaScriptVersion = '1.7.0';
+const mistaScriptVersion = '1.7.1';
 let tooltipsOrder = [];
 let tooltipsMap = {};
 let currentTopicId = 0;
@@ -103,14 +103,13 @@ let formOptions = [
 
 function utimeToDate(utime) {
     let a = new Date(utime*1000);
-
-    let year  = a.getYear();
-    let month = a.getMonth();
+    let year  = a.getFullYear();
+    let month = a.getMonth() + 1;
     let date  = a.getDate();
     let hours = a.getHours();
     let minutes = "0" + a.getMinutes();
 
-    return date + '.' + month + '.' + year + ' - ' + hours + ':' + minutes.substr(-2);
+    return '' + date + '.' + month + '.' + year + ' - ' + hours + ':' + minutes.substr(-2);
 }
 
 function parseJSON(text) {
