@@ -5,7 +5,7 @@ var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = [
 // ==UserScript==
 // @name         mista.ru
 // @namespace    http://tampermonkey.net/
-// @version      1.7.0
+// @version      1.7.1
 // @description  Make mista great again!
 // @author       acsent
 // @match        *.mista.ru/*
@@ -17,7 +17,7 @@ var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = [
 // @updateURL    https://cdn.jsdelivr.net/gh/a-sitnikov/mista.js@latest/user.js
 // ==/UserScript==
 
-var mistaScriptVersion = '1.7.0';
+var mistaScriptVersion = '1.7.1';
 var tooltipsOrder = [];
 var tooltipsMap = {};
 var currentTopicId = 0;
@@ -48,14 +48,13 @@ var formOptions = [{
 
 function utimeToDate(utime) {
     var a = new Date(utime * 1000);
-
-    var year = a.getYear();
-    var month = a.getMonth();
+    var year = a.getFullYear();
+    var month = a.getMonth() + 1;
     var date = a.getDate();
     var hours = a.getHours();
     var minutes = "0" + a.getMinutes();
 
-    return date + '.' + month + '.' + year + ' - ' + hours + ':' + minutes.substr(-2);
+    return '' + date + '.' + month + '.' + year + ' - ' + hours + ':' + minutes.substr(-2);
 }
 
 function parseJSON(text) {
