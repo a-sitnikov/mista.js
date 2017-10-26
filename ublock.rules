@@ -1,21 +1,11 @@
 ! mista.ru
 
-www.forum.mista.ru##.forum-title
-www.forum.mista.ru##.bnr-right
-www.forum.mista.ru##.bnr-top
-www.forum.mista.ru###tdmsg0 > .ta-right
-www.forum.mista.ru###tdmsg10 > .ta-right
-www.forum.mista.ru###tdmsg49 > .ta-right
-www.forum.mista.ru###container > .ta-center
-www.forum.mista.ru##.advert
-www.forum.mista.ru##.advice
-
-job.mista.ru##.forum-title
-job.mista.ru##.bnr-right
-job.mista.ru##.bnr-top
-job.mista.ru###tdmsg0 > .ta-right
-job.mista.ru###tdmsg10 > .ta-right
-job.mista.ru###tdmsg49 > .ta-right
-job.mista.ru###container > .ta-center
-job.mista.ru##.advert
-job.mista.ru##.advice
+mista.ru##.forum-title
+mista.ru##.bnr-right
+mista.ru##.bnr-top
+mista.ru###tdmsg0 > .ta-right
+mista.ru###tdmsg10 > .ta-right
+mista.ru###tdmsg49 > .ta-right
+mista.ru###container > .ta-center
+mista.ru##.advert
+mista.ru##.advice
