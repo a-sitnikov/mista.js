@@ -3,6 +3,7 @@
 mista.ru##.forum-title
 mista.ru##.bnr-right
 mista.ru##.bnr-top
+mista.ru##a[href^="banners.php"]
 mista.ru###tdmsg0 > .ta-right
 mista.ru###tdmsg10 > .ta-right
 mista.ru###tdmsg49 > .ta-right
