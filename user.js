@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         mista.ru
 // @namespace    http://tampermonkey.net/
-// @version      1.7.2
+// @version      1.7.3
 // @description  Make mista great again!
 // @author       acsent
 // @match        *.mista.ru/*
@@ -13,7 +13,7 @@
 // @updateURL    https://cdn.jsdelivr.net/gh/a-sitnikov/mista.js@latest/user.js
 // ==/UserScript==
 
-const mistaScriptVersion = '1.7.2';
+const mistaScriptVersion = '1.7.3';
 let tooltipsOrder = [];
 let tooltipsMap = {};
 let currentTopicId = 0;
@@ -678,24 +678,28 @@ function setYoutubeTitle(link, videoId, onlyBindEvents) {
 function processLinkToYoutube(element, url, onlyBindEvents) {
 
     let videoId;
-    // youtube.com/watch?v=videoId
+    // youtube.com/watch?v=videoId&t=
     if (url.search(/youtube/) !== -1) {
         if (options.get('show-youtube-title').value === 'true'){
             try{
-                videoId = url.match(/v=(.+)(\&|$)/)[1];
+                videoId = url.match(/v=(.+?)(\&|\?|$)/)[1];
             } catch(e){}
-            if (videoId) setYoutubeTitle(element, videoId, onlyBindEvents);
+            if (videoId) {
+                setYoutubeTitle(element, videoId, onlyBindEvents);
+            }
         }
         return true;
     }
 
-    // youtu.be/videoId
+    // youtu.be/videoId?t=
     if (url.search(/youtu\.be/) !== -1) {
         if (options.get('show-youtube-title').value === 'true'){
             try{
-                videoId = url.match(/e\/(.+)(\&|$)/)[1];
+                videoId = url.match(/e\/(.+?)(\&|\?|$)/)[1];
             } catch(e){}
-            if (videoId) setYoutubeTitle(element, videoId, onlyBindEvents);
+            if (videoId) {
+                setYoutubeTitle(element, videoId, onlyBindEvents);
+            }
         }
         return true;
     }
