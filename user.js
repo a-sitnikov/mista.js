@@ -1,10 +1,11 @@
 // ==UserScript==
 // @name         mista.ru
 // @namespace    http://tampermonkey.net/
-// @version      1.7.4
+// @version      1.7.5
 // @description  Make mista great again!
 // @author       acsent
 // @match        *.mista.ru/*
+// @match        *.mista.cc/*
 // @grant        none
 // @require      http://forum.mista.ru/js/jquery-1.9.1.min.js
 // @require      https://code.jquery.com/ui/1.12.1/jquery-ui.min.js
@@ -13,7 +14,7 @@
 // @updateURL    https://cdn.jsdelivr.net/gh/a-sitnikov/mista.js@latest/user.js
 // ==/UserScript==
 
-const mistaScriptVersion = '1.7.4';
+const mistaScriptVersion = '1.7.5';
 let tooltipsOrder = [];
 let tooltipsMap = {};
 let currentTopicId = 0;
@@ -373,7 +374,8 @@ function setMsgTextAjax(topicId, msgId, elemHeader, elemText){
         $.ajax({
             url: `ajax_gettopic.php?id=${topicId}`
         }).done(function(data) {
-            let dataObj = parseJSON(data);
+            //console.log('data', data);
+            let dataObj = data;//parseJSON(data);
             setMsgTextAjax(topicId, dataObj.answers_count, elemHeader, elemText);
         });
         return;
@@ -384,7 +386,7 @@ function setMsgTextAjax(topicId, msgId, elemHeader, elemText){
     $.ajax({
         url: apiUrl
     }).done(function(data) {
-        dataObj = parseJSON(data);
+        dataObj = data;//parseJSON(data);
         if (!dataObj || dataObj.length === 0 || $.isEmptyObject(dataObj)) {
             elemText.html(`Сообщение не найдено<BR>Topic id: ${topicId}<BR>Msg id: ${msgId}`);
             return;
