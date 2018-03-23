@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         mista.ru
 // @namespace    http://tampermonkey.net/
-// @version      1.7.5
+// @version      1.8.0
 // @description  Make mista great again!
 // @author       acsent
 // @match        *.mista.ru/*
@@ -14,7 +14,7 @@
 // @updateURL    https://cdn.jsdelivr.net/gh/a-sitnikov/mista.js@latest/user.js
 // ==/UserScript==
 
-const mistaScriptVersion = '1.7.5';
+const mistaScriptVersion = '1.8.0';
 let tooltipsOrder = [];
 let tooltipsMap = {};
 let currentTopicId = 0;
@@ -408,6 +408,8 @@ function setMsgTextAjax(topicId, msgId, elemHeader, elemText){
             elemText.html('Возможно оно скрыто или удалено');
             return;
         }
+    }).fail(function (jqXHR, exception){
+        console.log(jqXHR);
     });
 }
 
@@ -946,6 +948,27 @@ function hideIgnored() {
 
 }
 
+function code1ConClick(e){
+
+    e.preventDefault();
+
+    var openTag = '[1C]\n';
+    var closeTag = '\n[/1C]';
+
+    var textArea = $('#message_text');
+    var start = textArea[0].selectionStart;
+    var end = textArea[0].selectionEnd;
+
+    var oldText = textArea.val();
+    var len = oldText.length;
+    var selectedText = oldText.substring(start, end);
+    var replacement = openTag + selectedText + closeTag;
+    var newText = oldText.substring(0, start) + replacement + oldText.substring(end, len);
+
+    textArea.val(newText);
+
+}
+
 (function() {
 
     let currentUrl = window.location.href;
@@ -972,6 +995,11 @@ function hideIgnored() {
         let elemText = $(this).find('td[id^=tdmsg]');
         run(elemHeader, elemText);
     });
+
+    // button code 1C
+    $('<button class="sendbutton" name="code1C" style="margin: 5px">Код 1С</button>')
+        .insertBefore("#submit_message")
+        .click(code1ConClick);
 
     // style  for options form & tooltips
     $("<style>")
