@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         mista.ru
 // @namespace    http://tampermonkey.net/
-// @version      1.8.0
+// @version      1.8.1
 // @description  Make mista great again!
 // @author       acsent
 // @match        *.mista.ru/*
@@ -14,7 +14,7 @@
 // @updateURL    https://cdn.jsdelivr.net/gh/a-sitnikov/mista.js@latest/user.js
 // ==/UserScript==
 
-const mistaScriptVersion = '1.8.0';
+const mistaScriptVersion = '1.8.1';
 let tooltipsOrder = [];
 let tooltipsMap = {};
 let currentTopicId = 0;
@@ -910,11 +910,11 @@ function addUserAutocomplete(){
     $('textarea').textcomplete([{
         match: /(^|\s)@([a-zA-Zа-яА-Я0-9_]{2,})$/,
         search: function (term, callback) {
-            if (!term) return;
             $.ajax({
-                url: `http://forum-mista.pro/api/users.php?name=${encodeURI(term)}&count=${count}`
+                url: `/api/users.php?name=${encodeURI(term)}&count=${count}`
             }).done(function(data){
-                let dataObj = JSON.parse(data).map(function(a){return a.name;});
+                let dataObj = typeof(data) === 'string' ? JSON.parse(data) : data;
+                dataObj = dataObj.map(function(a){return a.name;});
                 callback(dataObj);
             }).fail(function () {
                 callback([]); // Callback must be invoked even if something went wrong.
@@ -927,7 +927,10 @@ function addUserAutocomplete(){
                 return ' @{' + word + '} ';
         },
         template: function(value, term) {
-            return `<b>${term}</b>` + value.substring(term.length);
+            if (value)
+                return `<b>${term}</b>` + value.substring(term.length);
+            else
+                return term;
         },
         // index in match result
         index: 2
