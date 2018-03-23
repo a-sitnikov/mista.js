@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         mista.ru
 // @namespace    http://tampermonkey.net/
-// @version      1.8.1
+// @version      1.8.2
 // @description  Make mista great again!
 // @author       acsent
 // @match        *.mista.ru/*
@@ -14,7 +14,7 @@
 // @updateURL    https://cdn.jsdelivr.net/gh/a-sitnikov/mista.js@latest/user.js
 // ==/UserScript==
 
-const mistaScriptVersion = '1.8.1';
+const mistaScriptVersion = '1.8.2';
 let tooltipsOrder = [];
 let tooltipsMap = {};
 let currentTopicId = 0;
@@ -1001,7 +1001,7 @@ function code1ConClick(e){
 
     // button code 1C
     $('<button class="sendbutton" name="code1C" style="margin: 5px">Код 1С</button>')
-        .insertBefore("#submit_message")
+        .insertBefore('input[name=Submit]')
         .click(code1ConClick);
 
     // style  for options form & tooltips
