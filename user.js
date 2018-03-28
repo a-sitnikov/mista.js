@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         mista.ru
 // @namespace    http://tampermonkey.net/
-// @version      1.8.2
+// @version      1.9.1
 // @description  Make mista great again!
 // @author       acsent
 // @match        *.mista.ru/*
@@ -14,7 +14,7 @@
 // @updateURL    https://cdn.jsdelivr.net/gh/a-sitnikov/mista.js@latest/user.js
 // ==/UserScript==
 
-const mistaScriptVersion = '1.8.2';
+const mistaScriptVersion = '1.9.1';
 let tooltipsOrder = [];
 let tooltipsMap = {};
 let currentTopicId = 0;
@@ -50,7 +50,8 @@ let options = new Map([
     ["fix-broken-links",      {default: "true",        type: "checkbox", label: "Чинить поломанные ссылки (с русскими символами)"}],
     ["scroll-tooltip-on-main", {default: "true",       type: "checkbox", label: "При скролле этотого тултипа переходить к след/пред сообщениям"}],
     ["use-ignore",            {default: "false",       type: "checkbox", label: "Игнорировать следующих пользователей (имена через запятую)"}],
-    ["ignore-list",           {default: "",            type: "input",    label: "", width: "550"}]
+    ["ignore-list",           {default: "",            type: "input",    label: "", width: "550"}],
+    ["wrap-nicknames",        {default: "true",        type: "checkbox",    label: "Переность длинные ники"}]
 ]);
 
 let formOptions = [
@@ -74,7 +75,8 @@ let formOptions = [
             ['show-userpics'],
             ['max-userpic-width'],
             ['add-name-to-message'],
-            ['add-name-style']
+            ['add-name-style'],
+            ['wrap-nicknames']
         ]
     },
     {
@@ -723,6 +725,9 @@ function processLinkToUser(element, url, userPostMap, onlyBindEvents) {
     }
     if (!userId) return;
 
+    if (options.get('wrap-nicknames').value === 'true')
+        $(element).parent().css({'word-wrap': 'break-word'});
+
     let userName = $(element).attr('data-user_name');
     userName = userName || $(element).text();
 
@@ -1059,7 +1064,7 @@ function code1ConClick(e){
             background:#FFFFE1;
             border:1px solid #000000;
             width:630px;
-            min-height: 400px;
+            min-height: 450px;
             font-weight:normal;
             z-index: 1001;
         }
