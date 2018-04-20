@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         mista.ru
 // @namespace    http://tampermonkey.net/
-// @version      1.9.1
+// @version      1.9.2
 // @description  Make mista great again!
 // @author       acsent
 // @match        *.mista.ru/*
@@ -13,8 +13,9 @@
 // @downloadURL  https://cdn.jsdelivr.net/gh/a-sitnikov/mista.js@latest/user.js
 // @updateURL    https://cdn.jsdelivr.net/gh/a-sitnikov/mista.js@latest/user.js
 // ==/UserScript==
+/* global $ */
 
-const mistaScriptVersion = '1.9.1';
+const mistaScriptVersion = '1.9.2';
 let tooltipsOrder = [];
 let tooltipsMap = {};
 let currentTopicId = 0;
@@ -388,7 +389,7 @@ function setMsgTextAjax(topicId, msgId, elemHeader, elemText){
     $.ajax({
         url: apiUrl
     }).done(function(data) {
-        dataObj = data;//parseJSON(data);
+        let dataObj = data;//parseJSON(data);
         if (!dataObj || dataObj.length === 0 || $.isEmptyObject(dataObj)) {
             elemText.html(`Сообщение не найдено<BR>Topic id: ${topicId}<BR>Msg id: ${msgId}`);
             return;
@@ -1099,6 +1100,8 @@ function code1ConClick(e){
         .tooltip-text{
             padding:4px;
             word-break:break-word;
+            max-height: 700px;
+            overflow-y: auto;
         }
         .close-button{
             display: block;
