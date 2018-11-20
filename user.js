@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         mista.ru
 // @namespace    http://tampermonkey.net/
-// @version      1.9.3
+// @version      1.9.4
 // @description  Make mista great again!
 // @author       acsent
 // @match        *.mista.ru/*
@@ -15,7 +15,7 @@
 // ==/UserScript==
 /* global $ */
 
-const mistaScriptVersion = '1.9.3';
+const mistaScriptVersion = '1.9.4';
 let tooltipsOrder = [];
 let tooltipsMap = {};
 let currentTopicId = 0;
@@ -439,7 +439,7 @@ function createTooltip(link, msgId, topicId, scroll) {
          });
         return;
     }
-    $(tooltipHtml(msgId)).appendTo('#body');
+    $(tooltipHtml(msgId)).appendTo('body');
 
     let elem = $(`#tooltip_id${msgId}`)
         .draggable()
