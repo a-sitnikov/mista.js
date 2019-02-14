@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         mista.ru
 // @namespace    http://tampermonkey.net/
-// @version      1.9.5
+// @version      1.9.6
 // @description  Make mista great again!
 // @author       acsent
 // @match        *.mista.ru/*
@@ -15,7 +15,7 @@
 // ==/UserScript==
 /* global $ */
 
-const mistaScriptVersion = '1.9.5';
+const mistaScriptVersion = '1.9.6';
 let tooltipsOrder = [];
 let tooltipsMap = {};
 let currentTopicId = 0;
@@ -993,8 +993,9 @@ function code1ConClick(e){
         currentTopicId = currentUrl.match(/id=([0-9]+)/)[1];
     } catch(e){}
 
-    yourUrl = $('a[href*="users.php?id="]',  "#user-td").attr("href");
-    topicAuthor = $("a",  "#tduser0").text();
+    yourUrl = $('a[href*="users.php?id="]', ".nav-bar").attr("href");
+    if (yourUrl.substr(0, 1) === '/') yourUrl = yourUrl.substr(1);
+    topicAuthor = $("a", "#tduser0").text();
 
     readAllOptions();
 
