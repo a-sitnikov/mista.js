@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         mista.ru
 // @namespace    http://tampermonkey.net/
-// @version      1.9.4
+// @version      1.9.5
 // @description  Make mista great again!
 // @author       acsent
 // @match        *.mista.ru/*
@@ -15,7 +15,7 @@
 // ==/UserScript==
 /* global $ */
 
-const mistaScriptVersion = '1.9.4';
+const mistaScriptVersion = '1.9.5';
 let tooltipsOrder = [];
 let tooltipsMap = {};
 let currentTopicId = 0;
@@ -52,7 +52,8 @@ let options = new Map([
     ["scroll-tooltip-on-main", {default: "true",       type: "checkbox", label: "При скролле этотого тултипа переходить к след/пред сообщениям"}],
     ["use-ignore",            {default: "false",       type: "checkbox", label: "Игнорировать следующих пользователей (имена через запятую)"}],
     ["ignore-list",           {default: "",            type: "input",    label: "", width: "550"}],
-    ["wrap-nicknames",        {default: "true",        type: "checkbox",    label: "Переность длинные ники"}]
+    ["wrap-nicknames",        {default: "true",        type: "checkbox",    label: "Переность длинные ники"}],
+    ["re-before-title",       {default: "true",        type: "checkbox",    label: "Колонка \"Re\" перед темой"}]
 ]);
 
 let formOptions = [
@@ -100,7 +101,8 @@ let formOptions = [
             ['open-in-new_window'],
             ['user-autocomplete'],
             ['use-ignore'],
-            ['ignore-list']
+            ['ignore-list'],
+            ['re-before-title']
         ]
     }
 ];
@@ -826,10 +828,10 @@ function run(parentElemHeader, parentElemText, onlyBindEvents){
     // main page
     if (!parentElemText) {
          if (options.get('show-tooltips-on-main').value === 'true') {
-            $('td:nth-child(2).cc').each(function(){
+            $('.col_answers').each(function(){
                 let text = $(this).text();
                 $(this).text("");
-                let url = $(this).next().find('a:first()').attr("href") + "&p=last20#F";
+                let url = $(this).parent().find('.col_main a').attr("href") + "&p=last20#F";
                 let link = $(`<a href="${url}" style="color: black">${text}</a>`).appendTo($(this));
                 if (options.get('open-in-new_window').value === 'true') link.prop("target", "_blank");
                 let scroll = options.get('scroll-tooltip-on-main').value === 'true';
@@ -874,6 +876,12 @@ function run(parentElemHeader, parentElemText, onlyBindEvents){
             let url = $(this).attr('src');
             $(this).css('max-width', options.get('max-img-width').value + 'px')
             .wrap(`<a href="${url}"></a>`);
+        });
+    }
+
+    if (options.get('re-before-title').value === 'true') {
+        $("#tm tr").each(function(){
+            $(".col_main", this).before($(".col_answers", this));
         });
     }
 }
