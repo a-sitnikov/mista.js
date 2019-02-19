@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         mista.ru
 // @namespace    http://tampermonkey.net/
-// @version      1.9.6
+// @version      1.9.7
 // @description  Make mista great again!
 // @author       acsent
 // @match        *.mista.ru/*
@@ -15,7 +15,7 @@
 // ==/UserScript==
 /* global $ */
 
-const mistaScriptVersion = '1.9.6';
+const mistaScriptVersion = '1.9.7';
 let tooltipsOrder = [];
 let tooltipsMap = {};
 let currentTopicId = 0;
@@ -1000,7 +1000,7 @@ function code1ConClick(e){
     readAllOptions();
 
     $('<li class="nav-item"><a href="#">Настройки Mista.Script</a></li>')
-        .appendTo("ul.nav-bar")
+        .appendTo("nav>ul.nav-bar")
         .click(openMistaScriptOptions);
 
     $('body').click(function(e){
