@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         mista.ru
 // @namespace    http://tampermonkey.net/
-// @version      1.9.7
+// @version      1.9.8
 // @description  Make mista great again!
 // @author       acsent
 // @match        *.mista.ru/*
@@ -15,7 +15,7 @@
 // ==/UserScript==
 /* global $ */
 
-const mistaScriptVersion = '1.9.7';
+const mistaScriptVersion = '1.9.8';
 let tooltipsOrder = [];
 let tooltipsMap = {};
 let currentTopicId = 0;
@@ -250,6 +250,7 @@ function openMistaScriptOptions(){
        `</div>
         <div id="options-footer" class="options-footer">
            <div style="margin: 0px 0px 5px 10px;">После применения настроек страницу нужно перезагрузить</div>
+           <div style="margin: 0px 0px 5px 10px;">Попробуйте нового клиента <a href="https://a-sitnikov.github.io/react.mista/#/" target="blank">React.Mista</a></div>
            <div style="padding: 5px 10px 5px 10px; border-top: 1px solid silver; background-color:#eee">
               <button id="applyOptions" class="sendbutton" style="margin: 5px; height: 30px">OK</button>
               <button id="cancelOptions" class="sendbutton" style="margin: 5px; float: left;height: 30px">Отмена</button>
