@@ -2,10 +2,11 @@
 
 Скрипт можно использовать как персональный скрипт мисты (через личные настройки), так и через tapermonkey
 Для подключения скрипта, напрямую через git необходимо вставить следующий код в персональный скрипт
-`(function(){
+```js
+(function(){
     $.getScript('https://cdn.jsdelivr.net/gh/a-sitnikov/mista.js@latest/user.js');
 })();
-`
+```
 ## Options form
 
 ![tooltips](https://github.com/a-sitnikov/mista.js/raw/master/pics/tooltips.png)
